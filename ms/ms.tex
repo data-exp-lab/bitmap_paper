@@ -65,7 +65,8 @@
 %---------------------------------------------------------------------------------
 % ABSTRACT
 \begin{abstract}
-\todo{write something}
+Current scientific datasets can reach unwieldy sizes that impede analysis and scientific discovery. We present a method for using bitmap indexes to map files within a dataset to take advantage of domain partitioning across multiple files and limit the volume of data that must be loaded into memory. 
+\todo{more...}
 \end{abstract}
 
 \keywords{methods: numerical}
@@ -160,7 +161,7 @@ Collisions can be eliminated by either increasing the order of the index or nest
 
 Increasing the order of the coarse index has the same effect as nesting a second refined index within cells with collisions, but can also increases the size of the resulting map and the time it takes to identify files touched by a selection. However, if the order of the coarse index is too small or the order of the refined index too large, this too can increase the cost of a selection in terms of memory and time. \S\ref{SS:test_order} discusses this tradeoff and how to choose index orders.
 
-Collisions are more common for file partitioning schemes that are not localized. Figure \ref{fig:collision)files} shows an example of collisions for the different partitioning schemes discussed in \S\ref{SS:decomp}.
+Collisions are more common for file partitioning schemes that are not localized. Figure \ref{fig:collision_files} shows an example of collisions for the different partitioning schemes discussed in \S\ref{SS:decomp}.
 %
 \begin{figure}[htbp]
 \begin{center}
