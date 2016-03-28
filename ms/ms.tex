@@ -138,7 +138,9 @@ The precision of a single Morton index is only limited by the size of the intege
 %---------------------------------------------------------------------------------
 % BITMAPS & EWAH
 \subsection{Bitmaps \& EWAH Compression}
-For each file within a dataset, the Morton indices touched by the data can then be stored in a bitmap for future searches where the value of bit $j$ indicates whether or not Morton index $j$ is touched by the file in question. For Morton indexing of order $k$, this would result in a bitmap of length $2^{Nk}$ bits per file. This can become costly in terms of memory and the time required to perform bitmap operations. However, Enhanced Word-Aligned Hybrid (EWAH) compression can be used to limit these costs, particularly when the domain is sparsely populated \citep{Wu2001,Lemire2010}. \todo{more...}
+For each file within a dataset, the Morton indices touched by the data can then be stored in a bitmap index for future searches where the value of bit $j$ indicates whether or not Morton index $j$ is touched by the file in question. For Morton indexing of order $k$, this would result in a bitmap of length $2^{Nk}$ bits per file. This can become costly in terms of memory and the time required to perform bitmap operations. However, Enhanced Word-Aligned Hybrid (EWAH) compression can be used to limit these costs, particularly when the domain is densely or sparsely populated in localized regions \citep{Wu2001,Lemire2010,Kaser2016}. 
+
+An EWAH compressed bitmap will be smaller when there are long runs of identical values, with the smallest case being one in which either all or none of the bits are set. An uncompressed bitmap would require the same, maximum, amount of memory in both of these cases. The locality of Morton indices also takes advantage of the EWAH compression. If there are regions of the domain that are densely/sparsely populated, there Z-order space filling curve ensures that the bits denoting those regions will be adjacent, increasing the likelihood that there will be runs of identical (set/unset) bits.
 
 %---------------------------------------------------------------------------------
 % COLLISIONS
@@ -214,7 +216,7 @@ If there is a collision between files within a coarse cell, a second order bitma
 
 If ghost zones are desired, the neighbors of cells that intersect the edge of the selector are added to a separate bitmap. For cells without collisions, the neighbors are added at the coarse bitmap order. If there are collisions, the neighbors are added at the refined bitmap order.
 
-These procedures were implemented as part of the {\tt yt} python package \addref in order to facilitate the analysis of large astrophysical N-body simulations.
+These procedures were implemented as part of the {\tt yt} python package \addref in order to facilitate the analysis of large astrophysical N-body simulations. The open source EWAHBoolArray c++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016}.
 \todo{more/separate code section...?}
 
 %---------------------------------------------------------------------------------
