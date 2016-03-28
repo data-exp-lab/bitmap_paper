@@ -216,7 +216,7 @@ If there is a collision between files within a coarse cell, a second order bitma
 
 If ghost zones are desired, the neighbors of cells that intersect the edge of the selector are added to a separate bitmap. For cells without collisions, the neighbors are added at the coarse bitmap order. If there are collisions, the neighbors are added at the refined bitmap order.
 
-These procedures were implemented as part of the {\tt yt} python package \addref in order to facilitate the analysis of large astrophysical N-body simulations. The open source EWAHBoolArray c++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016}.
+These procedures were implemented as part of the {\tt yt} python package \citep{Turk20d11a} in order to facilitate the analysis of large astrophysical N-body simulations. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016}.
 \todo{more/separate code section...?}
 
 %---------------------------------------------------------------------------------
