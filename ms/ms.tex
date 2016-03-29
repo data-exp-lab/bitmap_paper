@@ -65,8 +65,7 @@
 %---------------------------------------------------------------------------------
 % ABSTRACT
 \begin{abstract}
-Current scientific datasets can reach unwieldy sizes that impede analysis and scientific discovery. We present a method for using bitmap indexes to map files within a dataset to take advantage of domain partitioning across multiple files and limit the volume of data that must be loaded into memory. 
-\todo{more...}
+Current scientific datasets can reach unwieldy sizes that impede analysis and scientific discovery. We present a method for using Morton order bitmap indexes to map the parts of the full domain touched by files within a dataset. This takes advantage of domain partitioning across multiple files and limits the volume of data that must be loaded into memory. This method is tested on mock datasets containing $1024^3$ three-dimensional points split across 512 files according to different partitioning schemes. Using Morton order bitmap indexes for localized partitioning schemes like the Hilbert space-filling curve, the number of files that must be loaded to access data for a sub-section of the domain will scale with the size of the sub-section. This will dramatically decrease the time and memory required for loading data during analysis.
 \end{abstract}
 
 \keywords{methods: numerical}
@@ -243,7 +242,6 @@ The order of the Morton indices used to map the files determines the time requir
 
 Below an order of 4, there are collisions between multiple files for every index, resulting in a larger number of files being identified. However, as the order increases, the number of collisions drops and the file count plateaus at $\sim25$\%. For indices of order 7, selection requires $>100\times$ the time that the same selection took for an order of 6, but there is no change in the number of files indicated. For this dataset, an order of 6 is sufficient to identify the minimal set of files touched by the selectors. This is the order of the domain decomposition for the file partitioning.
 
-%There is a slight increase in the time required to identify files when ghost zones are included, even though no files are selected by ghost zones along except for an index order of 6.
 
 % SECONDARY REFINEMENT
 \subsubsection{Collision Refinement}\label{SSS:test_order2}
@@ -335,6 +333,7 @@ Currently, this technique is most useful for datasets split across multiple file
 \item Switch times for tests to be averages over 10 runs (with std. dev. error bars?)
 \item Make diagram showing buffer added to test datasets?
 \item Plot \% files identified vs. \% domain selected?
+\item Ensure plot labels are all the same size when in document (set widths to colsize)
 \end{itemize}
 }
 
