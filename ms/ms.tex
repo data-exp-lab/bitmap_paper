@@ -189,7 +189,7 @@ Depending on how the domain is split between files, the inclusion of ghost zones
 \end{center}
 \end{figure}
 %
-The ghost zone has a width of one Morton cell at an index order of 3 and contains the same part of the domain in each case. However, due to differences in how the domain was partitioned between the files in the four cases, the number of additional ghost files touched by the ghost zone in each case is different. This will also depend on the index order at which the ghost zones are added. \todo{(more?)} While including ghost zones is advantageous when neighbor info is needed, it also increases the computational cost of identifying files (see \S\ref{S:tests}). 
+The ghost zone has a width of one Morton cell at an index order of 3 and contains the same part of the domain in each case. However, due to differences in how the domain was partitioned between the files in the four cases, the number of additional ghost files touched by the ghost zone in each case is different. This will also depend on the order of the index to which ghost zones are added. Ghost zones added at the order of the coarse index will be larger than those added at the order of the refined index and will have a higher probability of touching additional files. While including ghost zones is advantageous when neighbor info is needed, it also increases the computational cost of identifying files (see \S\ref{S:tests}). 
 
 %---------------------------------------------------------------------------------
 %---------------------------------------------------------------------------------
@@ -329,7 +329,6 @@ Currently, this technique is most useful for datasets split across multiple file
 \item Improve introduction \& conclusion
 \item Find \& add tagged references.
 \item Acknowledgements
-\item Write abstract
 \item Switch times for tests to be averages over 10 runs (with std. dev. error bars?)
 \item Make diagram showing buffer added to test datasets?
 \item Plot \% files identified vs. \% domain selected?
