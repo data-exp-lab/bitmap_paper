@@ -65,7 +65,7 @@
 %---------------------------------------------------------------------------------
 % ABSTRACT
 \begin{abstract}
-Current scientific datasets can reach unwieldy sizes that impede analysis and scientific discovery. We present a method for using Morton order bitmap indexes to map the parts of the full domain touched by files within a dataset. This takes advantage of domain partitioning across multiple files and limits the volume of data that must be loaded into memory. This method is tested on mock datasets containing $1024^3$ three-dimensional points split across 512 files according to different partitioning schemes. Using Morton order bitmap indexes for localized partitioning schemes like the Hilbert space-filling curve, the number of files that must be loaded to access data for a sub-section of the domain will scale with the size of the sub-section. This will dramatically decrease the time and memory required for loading data during analysis.
+Current scientific datasets can reach unwieldy sizes that impede analysis and scientific discovery. We present a method for using Morton order bitmap indexes to map the parts of the full domain touched by files within a dataset. This takes advantage of domain partitioning across multiple files and limits the volume of data that must be loaded into memory for a single query. This method is tested on mock datasets containing $1024^3$ three-dimensional points split across 512 files according to different partitioning schemes. Using Morton order bitmap indexes for localized partitioning schemes like the Hilbert space-filling curve, the number of files that must be loaded to access data for a sub-section of the domain will scale with the size of the sub-section and can be identified in under 1\,s even when the entire domain is included. This will dramatically decrease the time and memory required for loading data during analysis.
 \end{abstract}
 
 \keywords{methods: numerical}
@@ -142,6 +142,8 @@ For each file within a dataset, the Morton indices touched by the data can then 
 
 An EWAH compressed bitmap will be smaller when there are long runs of identical values, with the smallest case being one in which either all or none of the bits are set. An uncompressed bitmap would require the same, maximum, amount of memory in both of these cases. The locality of Morton indices also takes advantage of the EWAH compression. If there are regions of the domain that are densely/sparsely populated, there Z-order space filling curve ensures that the bits denoting those regions will be adjacent, increasing the likelihood that there will be runs of identical (set/unset) bits.
 
+Bitmap indexes are popular for use with large data warehouses, but have also been applied to scientific data from a diverse array of fields including geosciences \citep{Malensek2014}, earth sciences, rocket science \citep{Sinha2006,Sinha2007}, and high-energy physics \citep{Stockinger2000}. \todo{more?}
+
 %---------------------------------------------------------------------------------
 % COLLISIONS
 \subsection{Collisions}
@@ -156,7 +158,7 @@ It is possible that two files will contain data within the same Morton cell. Thi
 \end{figure}
 %
 
-Collisions can be eliminated by either increasing the order of the index or nesting a second index within cells that contain collisions. This is demonstrated in panel (b) of Figure \ref{fig:collision}. In those cells which contained collisions, a 2nd order Morton index was added. Those cells with collisions at the level of the refined index (purple cells in panel (b)) cover a much smaller portion of the domain than the cells with collisions at the level of the coarse index (purple cells in panel (a)). This means that any given selection is less likely to contain a collision and it will be less likely for a selector to require both files to be loaded unless it actually touches data from both files.
+Collisions can be limited by either increasing the order of the index or allowing for multi-resolution indexes \citep{Sinha2006,Sinha2007}. Panel (b) of Figure \ref{fig:collision} demonstrates an example of nesting a second index within cells that contain collisions. In those cells which contained collisions, a 2nd order Morton index was added. Those cells with collisions at the level of the refined index (purple cells in panel (b)) cover a much smaller portion of the domain than the cells with collisions at the level of the coarse index (purple cells in panel (a)). This means that any given selection is less likely to contain a collision and it will be less likely for a selector to require both files to be loaded unless it actually touches data from both files.
 
 Increasing the order of the coarse index has the same effect as nesting a second refined index within cells with collisions, but can also increases the size of the resulting map and the time it takes to identify files touched by a selection. However, if the order of the coarse index is too small or the order of the refined index too large, this too can increase the cost of a selection in terms of memory and time. \S\ref{SS:test_order} discusses this tradeoff and how to choose index orders.
 
@@ -332,6 +334,7 @@ Currently, this technique is most useful for datasets split across multiple file
 \item Switch times for tests to be averages over 10 runs (with std. dev. error bars?)
 \item Make diagram showing buffer added to test datasets?
 \item Plot \% files identified vs. \% domain selected?
+\item Move figures to the end for submission
 \end{itemize}
 }
 
