@@ -53,7 +53,7 @@
 
 \shorttitle{Bitmap Indexing}
 
-\title{Bitmap Indexing for Fast Analysis of Large Datasets}
+\title{Bitmap Indexing for Fast Analysis of Large Astrophysical Datasets}
 
 \author{Meagan Lang\altaffilmark{1} \& Matthew Turk\altaffilmark{1}}
 
@@ -74,7 +74,7 @@ Current scientific datasets can reach unwieldy sizes that impede analysis and sc
 %---------------------------------------------------------------------------------
 % INTRO
 \section{Introduction}\label{S:intro}
-Continuing advances in both hardware and software facilitate numerical simulations of growing complexity and size. The datasets produced by numerical simulations can currently reach sizes of a $\sim$100\TB{ }split across hundreds of files \citep[e.g.][]{Croft2015}\addref. In order to analyze such large datasets, we need innovative techniques for quickly indexing and selecting data without loading the entire dataset into memory. We present a technique for using Morton bitmap indexes to map files and accelerate data analysis. \S\ref{S:theory} provides background information on Morton order indexing, \S\ref{S:methods} describes the methods used to construct the bitmaps and use them to identify files for queries, \S\ref{S:tests} presents several tests demonstrating the speed-up provided for querying the data, and \S\ref{S:discuss} summarizes the advantages and describes areas for application.
+Continuing advances in both hardware and software facilitate astrophysical datasets of growing complexity and size. The datasets produced by numerical simulations can currently reach sizes of a $\sim$100\TB{ }split across hundreds of files \citep[e.g.][]{Croft2015}. This problem is not limited to theoretical work. During operations the Large Synoptic Survey Telescope (LSST) will produce 15\TB{ }of data each night \citep{Juric2015a}. In order to analyze such large datasets, we need innovative techniques for quickly indexing and selecting data without loading the entire dataset into memory. We present a technique for using Morton bitmap indexes to map files and accelerate data analysis. \S\ref{S:theory} provides background information on Morton order indexing, \S\ref{S:methods} describes the methods used to construct the bitmaps and use them to identify files for queries, \S\ref{S:tests} presents several tests demonstrating the speed-up provided for querying the data, and \S\ref{S:discuss} summarizes the advantages and describes areas for application.
 
 %---------------------------------------------------------------------------------
 %---------------------------------------------------------------------------------
@@ -138,11 +138,13 @@ The precision of a single Morton index is only limited by the size of the intege
 %---------------------------------------------------------------------------------
 % BITMAPS & EWAH
 \subsection{Bitmaps \& EWAH Compression}
+Bitmap indexes use the values of single bits to describe dataset properties. They are popular for use with large data warehouses, but have also been applied to scientific data from a diverse array of fields including geosciences \citep{Malensek2014}, earth sciences, rocket science \citep{Sinha2006,Sinha2007}, high-energy physics \citep{Stockinger2000}, and combustion \citep{Wu2003}. In cases where data attributes can take on a finite set of values, one bitmap is constructed for each possible attribute value. Within the bitmap each bit specifies whether or not the corresponding data point has that value. In this way, queries for data with a single attribute value require considering only one bitmap and queries of multiple attributes/values can be done using boolean AND operations on the corresponding bitmaps. In the case of scientific data, which often contains floating point value attributes, such attributes must be binned prior to constructing the bitmaps \addref. Here, Morton indices are used to bin N-dimensional floating point data along one-dimension and one bitmap is constructed for each file.
+
 For each file within a dataset, the Morton indices touched by the data can then be stored in a bitmap index for future searches where the value of bit $j$ indicates whether or not Morton index $j$ is touched by the file in question. For Morton indexing of order $k$, this would result in a bitmap of length $2^{Nk}$ bits per file. This can become costly in terms of memory and the time required to perform bitmap operations. However, Enhanced Word-Aligned Hybrid (EWAH) compression can be used to limit these costs, particularly when the domain is densely or sparsely populated in localized regions \citep{Wu2001,Lemire2010,Kaser2016}. 
 
 An EWAH compressed bitmap will be smaller when there are long runs of identical values, with the smallest case being one in which either all or none of the bits are set. An uncompressed bitmap would require the same, maximum, amount of memory in both of these cases. The locality of Morton indices also takes advantage of the EWAH compression. If there are regions of the domain that are densely/sparsely populated, there Z-order space filling curve ensures that the bits denoting those regions will be adjacent, increasing the likelihood that there will be runs of identical (set/unset) bits.
 
-Bitmap indexes are popular for use with large data warehouses, but have also been applied to scientific data from a diverse array of fields including geosciences \citep{Malensek2014}, earth sciences, rocket science \citep{Sinha2006,Sinha2007}, and high-energy physics \citep{Stockinger2000}. \todo{more?}
+
 
 %---------------------------------------------------------------------------------
 % COLLISIONS
