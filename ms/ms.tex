@@ -95,7 +95,7 @@ A common analysis task is the selection of data within a subset of the full doma
 \end{figure}
 %
 
-Panel (a) is an example where random parts of the domain are contained within each file. In such a case, many files will need to be loaded for contiguous selections within the domain. In panel (b), the domain was split between the files along the $x$ dimension. Fewer files will need to be loaded for queries along the $y$-dimension, but contiguous selection in $x$ will still require a greater number of files. Panels (c) and (d) are both examples of partitioning the domain between the files along a space filling curve (Morton and Hilbert curves respectively). These partitions have the greatest chance of limiting the number of files that must be loaded for a contiguous selection with slightly improved localization for the Hilbert curve. \todo{Examples of use cases \addref.}
+Panel (a) is an example where random parts of the domain are contained within each file. In such a case, many files will need to be loaded for contiguous selections within the domain. In panel (b), the domain was split between the files along the $x$ dimension. Fewer files will need to be loaded for queries along the $y$-dimension, but contiguous selection in $x$ will still require a greater number of files. Panels (c) and (d) are both examples of partitioning the domain between the files along a space filling curve \citep[Morton and Hilbert curves respectively,][]{Morton1996,Hilbert1970}. These partitions have the greatest chance of limiting the number of files that must be loaded for a contiguous selection with slightly improved localization for the Hilbert curve.
 
 Figure \ref{fig:selectors} shows examples of three selections within the above domain partitions. 
 %
@@ -111,16 +111,16 @@ Figure \ref{fig:selectors} shows examples of three selections within the above d
 %
 For the smallest selector (first row), the random domain decomposition (a) already requires half of the files to be loaded while more localized schemes require much fewer. Similarly, while the sliced domain partition (b), requires the fewest files to be loaded when the selector is oriented in the same direction as the slicing (second row), it requires all of the files when the selector is perpendicular to the slicing (third row). While some datasets may have information on the domain range covered by each file, the partitioning scheme used at output is often decided at runtime, can be system dependent, and may be imperfect. 
 
-Files are often partitioned for parallel I/O such that each processor outputs data on the portion of the domain it is responsible for. To limit the cost of communication between processors, the domain will be split across processors such that neighboring processors are responsible for neighboring parts of the domain. This means that, although the overall partitioning scheme may be known for a given dataset, the exact order of the files will be dependent on the configuration of the processors at runtime. \addref
+Files are often partitioned for parallel I/O such that each processor outputs data on the portion of the domain it is responsible for. To limit the cost of communication between processors, the domain will be split across processors such that neighboring processors are responsible for neighboring parts of the domain. This means that, although the overall partitioning scheme may be known for a given dataset, the exact order of the files will be dependent on the configuration of the processors at runtime. 
 
-The partitioning can also be imperfect if the partition is not perfectly maintained. For instance, in astrophysical N-body simulations, it is possible for particles to travel from one processor's domain to another. In this case, the partition will only be perfect directly following an update to the domain decomposition. \addref
+The partitioning can also be imperfect if the partition is not perfectly maintained. For instance, in astrophysical N-body simulations, it is possible for particles to travel from one processor's domain to another. In this case, the partition will only be perfect directly following an update to the domain decomposition. 
 
-In cases where the exact file organization is not known or imperfect, it is advantageous to map the files post-process in order to speed up selections for analysis. 
+In cases where the exact file organization is not known or imperfect, it is advantageous to map the files post-process in order to speed up selections for analysis. Although the same result can be achieved by re-sorting the data itself, creating the map is computationally less expensive than re-sorting the data and does not required write access, which may not be feasible as in the case of datasets shared by large, distributed communities.
 
 %---------------------------------------------------------------------------------
 % MORTON INDICES
 \subsection{Morton Indices}
-Morton order indices map multidimensional data onto a one-dimensional space filling curve \citep{Morton1996}. This is done by breaking up the domain into cells where each cell's position within the $N$-dimensional domain can be described by $N$ integers. The Morton index of the cell is then created by interleaving the bits of the $N$ integers to create a single integer that fully describes the cell's position (see Figure \ref{fig:zorder}). 
+Morton ordering maps multidimensional data onto a one-dimensional space filling curve \citep{Morton1996}. This is done by breaking up the domain into cells where each cell's position within the $N$-dimensional domain can be described by $N$ integers. The Morton index of the cell is then created by interleaving the bits of the $N$ integers to create a single integer that fully describes the cell's position (see panel (b) Figure \ref{fig:zorder}). As seen in panel (a) of Figure \ref{fig:zorder}, ordering of the cells by their Morton indices forms a space filling Z-curve.
 %
 \begin{figure}[htbp]
 \begin{center}
@@ -131,20 +131,18 @@ Morton order indices map multidimensional data onto a one-dimensional space fill
 \end{figure}
 %
 
-The precision of a single Morton index is only limited by the size of the integer used to store it. For instance, 64-bit Morton indices in 3 dimensions can be localized to $1/2^{21}$th of the domain in each dimension ($3\times21$\,bits = 63\,bits). If the domain is binarily divided into subcells to some order $k$ in each dimension (i.e. $2^{Nk}$ cells), coarser Morton indices can be obtained by simply masking lower bits. Morton indices can then be used to track what parts of the domain contain data and which files contain that data.
-
-\todo{Examples of uses of Morton indices in the literature \addref.}
+The precision of a single Morton index is only limited by the size of the integer used to store it. For instance, 64-bit Morton indices in 3 dimensions can be localized to $1/2^{21}$th of the domain in each dimension ($3\times21$\,bits = 63\,bits). If the domain is binarily divided into subcells to some order $k$ in each dimension (i.e. $2^{Nk}$ cells), coarser Morton indices can be obtained by simply masking lower bits. Morton ordering has been used to speed up quadtree construction \citep{Hjaltason2002}, nearest neighbor searches \citep{Connor2010}, and range queries \citep{Orenstein1984}. By recording the indices of the cells containing data from each file within a dataset, Morton indices can also be used to construct one-dimensional maps of an $N$-dimensional dataset.
 
 %---------------------------------------------------------------------------------
 % BITMAPS & EWAH
 \subsection{Bitmaps \& EWAH Compression}
-Bitmap indexes use the values of single bits to describe dataset properties. They are popular for use with large data warehouses, but have also been applied to scientific data from a diverse array of fields including geosciences \citep{Malensek2014}, earth sciences, rocket science \citep{Sinha2006,Sinha2007}, high-energy physics \citep{Stockinger2000}, and combustion \citep{Wu2003}. In cases where data attributes can take on a finite set of values, one bitmap is constructed for each possible attribute value. Within the bitmap each bit specifies whether or not the corresponding data point has that value. In this way, queries for data with a single attribute value require considering only one bitmap and queries of multiple attributes/values can be done using boolean AND operations on the corresponding bitmaps. In the case of scientific data, which often contains floating point value attributes, such attributes must be binned prior to constructing the bitmaps \addref. Here, Morton indices are used to bin N-dimensional floating point data along one-dimension and one bitmap is constructed for each file.
+Bitmap indexes use the values of single bits to describe dataset properties. They are popular for use with large data warehouses \citep{Wu1998,Chan1998,Chan1999}, but have also been applied to scientific data from a diverse array of fields including geosciences \citep{Malensek2014}, earth sciences, rocket science \citep{Sinha2006,Sinha2007}, high-energy physics \citep{Stockinger2000}, and combustion \citep{Wu2003}. 
+
+In cases where data attributes can take on a finite set of values, one bitmap is constructed for each possible attribute value. Within the bitmap each bit specifies whether or not the corresponding data point has that value. In this way, queries for data with a single attribute value require considering only one bitmap and queries of multiple attributes/values can be done using boolean AND operations on the corresponding bitmaps. In the case of scientific data, which often contains floating point value attributes, such attributes must be binned prior to constructing the bitmaps \citep{Yu1998,Shoshani1999}. Here, Morton indices are used to bin N-dimensional floating point data along one-dimension and one bitmap is constructed for each file.
 
 For each file within a dataset, the Morton indices touched by the data can then be stored in a bitmap index for future searches where the value of bit $j$ indicates whether or not Morton index $j$ is touched by the file in question. For Morton indexing of order $k$, this would result in a bitmap of length $2^{Nk}$ bits per file. This can become costly in terms of memory and the time required to perform bitmap operations. However, Enhanced Word-Aligned Hybrid (EWAH) compression can be used to limit these costs, particularly when the domain is densely or sparsely populated in localized regions \citep{Wu2001,Lemire2010,Kaser2016}. 
 
-An EWAH compressed bitmap will be smaller when there are long runs of identical values, with the smallest case being one in which either all or none of the bits are set. An uncompressed bitmap would require the same, maximum, amount of memory in both of these cases. The locality of Morton indices also takes advantage of the EWAH compression. If there are regions of the domain that are densely/sparsely populated, there Z-order space filling curve ensures that the bits denoting those regions will be adjacent, increasing the likelihood that there will be runs of identical (set/unset) bits.
-
-
+An EWAH compressed bitmap will be smaller when there are long runs of identical values, with the smallest case being one in which either all or none of the bits are set. An uncompressed bitmap would require the same, maximum, amount of memory in both of these cases. The locality of Morton indices also takes advantage of the EWAH compression. If there are regions of the domain that are densely/sparsely populated, there Z-order space filling curve ensures that the bits denoting those regions will be adjacent, increasing the likelihood that there will be runs of identical (set/unset) bits and limiting the size of the compressed bitmaps.
 
 %---------------------------------------------------------------------------------
 % COLLISIONS
@@ -330,6 +328,8 @@ Currently, this technique is most useful for datasets split across multiple file
 \newpage
 \todo{To do:
 \begin{itemize}
+\item Comment on cost of loading particles vs. loading bitmap
+\item Comment on not reordering data
 \item Improve introduction \& conclusion
 \item Find \& add tagged references.
 \item Acknowledgements
