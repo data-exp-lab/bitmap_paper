@@ -231,29 +231,29 @@ The order of the Morton indices used to map the files determines the time requir
 %
 \begin{figure}[htbp]
 \begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order1_np1024_nf512_or0.png}
-\caption{Dependence of query time (top) and fraction of files selected/cells with collisions (bottom) on the total refinement of the bitmap index. The solid black lines correspond to the query times and files identified by just the selectors. The dashed black lines correspond to the query times and additional files selected when a ghost zone with the width of one Morton cell is added around the selectors. The solid blue line in the bottom panel shows the fraction of cells with collisions between files.}
+\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order1_or0.png}
+\caption{Dependence of query time (top), fraction of files selected/cells with collisions (middle), and index size (bottom) on the total refinement of the bitmap index. The solid black lines correspond to the query times and files identified by just the selectors. The dashed blue lines correspond to the query times and additional files selected when a ghost zone with the width of one Morton cell is added around the selectors. The dash-dotted line in the middle panel shows the fraction of cells with collisions between files.}
 \label{fig:test_order1}
 \end{center}
 \end{figure}
 %
 
-Below a bitmap index order of 4, there are collisions between multiple files within every cell, resulting in a larger number of files being identified. However, as the order increases, the number of collisions drops and the file count plateaus at $\sim25$\%. For a 7th order bitmap index, selection requires $>100\times$ the time that the same selection took using a 6th order index, but there is no change in the number of files indicated. A 6th order index is sufficient to identify the minimal set of files touched by the selectors in this case because the dataset was partitioned between the files along a 6th order Hilbert space filling curve. While it is generally true that the time required to identify files using a bitmap index will increase exponentially with the order of the index, the order of the index that results in the minimal number of files for any dataset will depend upon how the domain is partitioned between files (see \S\ref{SS:test_decomp}).
+Below a bitmap index order of 4, there are collisions between multiple files within every cell, resulting in a larger number of files being identified. However, as the order increases, the number of collisions drops and the file count plateaus at $\sim25$\%. For a 7th order bitmap index, selection requires $>100\times$ the time that the same selection took using a 6th order index, but there is no change in the number of files indicated. A 6th order index is sufficient to identify the minimal set of files touched by the selectors in this case because the dataset was partitioned between the files along a 6th order Hilbert space filling curve. While it is generally true that the time required to identify files using a bitmap index will increase exponentially with the size of the index, the order of the index that results in the minimal number of files for any dataset will depend upon how the domain is partitioned between files (see \S\ref{SS:test_decomp}). The memory required to store the index for the test dataset scales according to $\propto2^{2k}$, for a $k^{\mbox{th}}$ order index. If uncompressed bitmaps had been used instead of EWAH compressed bitmap, the memory would have scaled with the total number of cells contained within the 3-dimensional test domain ($2^{3k}$).
 
 % SECONDARY REFINEMENT
 \subsubsection{Collision Refinement}\label{SSS:test_order2}
-Increasing the refinement of the primary index does so for the entire domain and, as seen in \S\ref{SSS:test_order1}, can become costly in terms of the memory required to store the bitmap and the time required to perform operations. However, it is also possible to increase refinement by nesting a second Morton bitmap index within those cells of the primary index that contain collisions. The increase in memory and operations cost that results from adding a second index is then proportional to the number of collisions within the primary bitmap. Figure \ref{fig:test_order2} shows the results for adding a secondary index of varying order with the overall refinement order of the index (primary index order + secondary index order) held constant at 6. The test dataset and selectors applied were the same as in \S\ref{SSS:test_order1}.
+Increasing the refinement of the primary index does so for the entire domain and, as seen in \S\ref{SSS:test_order1}, can become costly in terms of the memory required to store the bitmap and the time required to perform operations. However, it is also possible to increase refinement by nesting a second Morton bitmap index within those cells of the primary index that contain collisions. As the nested indexes will contain a smaller portion of the domain and data, they will be less complex and can be compressed more efficiently than the primary index covering the entire domain. This enhanced compression mean that, although a greater overall number of EWAH compressed bitmaps will need to be utilized (one for the coarse index and one for each collision within the coarse index), less space will be needed to store the bitmap and bitwise operations will be faster. Figure \ref{fig:test_order2} shows the results for adding a secondary index of varying order with the overall refinement order of the index (primary index order + secondary index order) held constant at 6. The test dataset and selectors applied were the same as in \S\ref{SSS:test_order1}.
 %
 \begin{figure}[htbp]
 \begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order2_np1024_nf512.png}
-\caption{Dependence of query time (top) and fraction of files selected/cells with collisions (bottom) on primary vs. secondary refinement. The solid black lines correspond to the query times and files identified. The dashed blue line in the bottom panel is the fraction of cells at the first index level that have collisions. The dotted blue line is the fraction of cells at the second index level that have collisions.}
+\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order2_to6.png}
+\caption{Dependence of query time (top), fraction of files selected/cells with collisions (middle), and memory required to store the index (bottom) on the order of the secondary index used to refine collisions. In the middle panel, the solid black line corresponds with the fraction of files identified, the dash-dotted blue line is the fraction of cells at the first index level that have collisions, and the dotted red line is the fraction of cells at the second index level that have collisions.}
 \label{fig:test_order2}
 \end{center}
 \end{figure}
 %
 
-When the order of the second refined index is low, the first index is larger resulting in fewer cells with collisions at the first index and more at the second. The reverse is true when the order of second index is higher. As the overall order is held constant, the same number of files are identified regardless of the orders of the first and second indexes. The time required to identify the files is minimized when cells within the first index become saturated with collisions. For higher order secondary indices, the EWAH compressed bitmaps used to refine collisions at the coarse index order are larger, resulting in an increase in the time required for query operations and memory consumption. However, selections using higher order secondary indices still require less time than in the case where only a single index is used. 
+When the order of the second refined index is low, the first index is larger resulting in fewer cells with collisions at the first index and more at the second. The reverse is true when the order of second index is higher. As the overall order is held constant, the same number of files are identified regardless of the orders of the first and second indexes. The time required to identify the files is minimized when cells within the first index become saturated with collisions. For secondary indexes of order 2 or lower, the large increase in performance offered for increases in the index order results from the reduction in the total complexity of the index which translates to shorter times for bitwise operations and less memory required for storage. Above 2nd order, the overhead from storing and accessing more complex EWAH compressed bitmaps for each collision begins to flatten the memory scaling and increase the time required for queries  However, selections using higher order secondary indices still require less time than in the case where only a single index is used. 
 
 The optimal value for the orders of the first and second indexes will depend upon the dataset in question. The density of data points within the test dataset used here is relatively uniform throughout the domain and does not need a high level of refinement at collisions. However, if a data set were less uniform with concentrations of points, the optimal order of the second index for performance may be higher.
 
@@ -264,7 +264,7 @@ The time required to identify files touched by a selection will also depend upon
 %
 \begin{figure}[htbp]
 \begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_selector_np1024_nf512.png}
+\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_selector.png}
 \caption{Dependence of query time (top) and number of files selected (bottom) on selector width in terms of the total domain width. The solid black lines correspond to the query times and files identified by the selectors alone. The dashed black lines correspond the query times and additional files identified when a ghost zone with a width of one cell is added to the selector.}
 \label{fig:test_size}
 \end{center}
@@ -281,12 +281,12 @@ As discussed in \S\ref{SS:decomp}, a bitmap index is more effective in cases whe
 \begin{figure}[hbpt]
 \begin{center}
 \includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_decomp_np1024_nf512_or0.png}
-\caption{Dependence of query time (top) and the number of files selected (bottom) on index order for different domain partitioning between files. The dotted magenta line is a randomly partitioned dataset, the cyan dashed-dotted line is a dataset partitioned by equal slices alone one dimension, the dashed red line is a dataset partitioned along an 6th order Morton curve, an the solid blue line is a dataset partitioned along a 6th order Hilbert curve.}
+\caption{Dependence of query time (top) and the number of files selected (bottom) on index order for different domain partitioning between files. The dotted magenta line is a randomly partitioned dataset, the cyan dashed-dotted line is a dataset partitioned by equal slices alone one dimension, the dashed red line is a dataset partitioned along an 6th order Morton curve, an the solid blue line is a dataset partitioned along a 6th order Hilbert curve. \todo{update}}
 \label{fig:test_decomp}
 \end{center}
 \end{figure}
 
-Many more files are identified for the random dataset than those datasets with localized partitioning of the domain. Above an order of 3, very few files could be excluded for the random dataset. This was not true for the localized partitioning schemes. At the highest order, only $\sim20-30$\% of the files within these datasets would need to be loaded in order to get all of the data within the selected regions, while $>80$\% of the files in the random dataset would be required. The smallest fraction of files were identified for the Hilbert and Morton datasets, with a slightly greater fraction being identified for the sliced dataset. The sliced dataset performed particularly well in this case because the selectors used were cubes and did not preferentially select along any one dimension.
+Many more files are identified for the random dataset than those datasets with localized partitioning of the domain. Above an order of 3, very few files could be excluded for the random dataset. This was not true for the localized partitioning schemes. At the highest order, only $\sim20-30$\% of the files within these datasets would need to be loaded in order to get all of the data within the selected regions, while $>80$\% of the files in the random dataset would be required. The smallest fraction of files were identified for the Hilbert and Morton datasets, with a slightly greater fraction being identified for the sliced dataset. The sliced dataset performed particularly well in this case because the selectors used were cubes and did not preferentially select along any one dimension. \todo{comment on mem and performance at order 7 for morton and hilbert}
 
 %---------------------------------------------------------------------------------
 % SUMMARY & DISCUSSION
@@ -331,7 +331,8 @@ M. Turk would like to acknowledge \todo{grants, people, places}
 \begin{itemize}
 \item Improve conclusion
 \item Acknowledgements
-\item Plot mem vs index order
+\item Non-uniform test data set?
+\item Double check figure descriptions match figures (line colors esp)
 \item Move figures to the end for submission
 \end{itemize}
 }
