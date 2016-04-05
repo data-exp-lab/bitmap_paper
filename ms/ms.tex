@@ -265,7 +265,7 @@ The time required to identify files touched by a selection will also depend upon
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_selector.png}
-\caption{Dependence of query time (top) and number of files selected (bottom) on selector width in terms of the total domain width. The solid black lines correspond to the query times and files identified by the selectors alone. The dashed black lines correspond the query times and additional files identified when a ghost zone with a width of one cell is added to the selector.}
+\caption{Dependence of query time (top) and number of files selected (bottom) on selector width in terms of the total domain width. The solid black lines correspond to the query times and files identified by the selectors alone. The dashed blue lines correspond the query times and additional files identified when a ghost zone with a width of one cell is added to the selector.}
 \label{fig:test_size}
 \end{center}
 \end{figure}
@@ -280,13 +280,13 @@ As discussed in \S\ref{SS:decomp}, a bitmap index is more effective in cases whe
 %
 \begin{figure}[hbpt]
 \begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_decomp_np1024_nf512_or0.png}
-\caption{Dependence of query time (top) and the number of files selected (bottom) on index order for different domain partitioning between files. The dotted magenta line is a randomly partitioned dataset, the cyan dashed-dotted line is a dataset partitioned by equal slices alone one dimension, the dashed red line is a dataset partitioned along an 6th order Morton curve, an the solid blue line is a dataset partitioned along a 6th order Hilbert curve. \todo{update}}
+\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_decomp_to0.png}
+\caption{Dependence of query time (top), the number of files selected (middle), and the size of the index (bottom) on index order for different domain partitioning between files. The dotted magenta lines are for a randomly partitioned dataset, the cyan dashed-dotted lines are a dataset partitioned by equal slices alone one dimension, the dashed red lines are a dataset partitioned along an 6th order Morton curve, and the solid blue lines are a dataset partitioned along a 6th order Hilbert curve.}
 \label{fig:test_decomp}
 \end{center}
 \end{figure}
 
-Many more files are identified for the random dataset than those datasets with localized partitioning of the domain. Above an order of 3, very few files could be excluded for the random dataset. This was not true for the localized partitioning schemes. At the highest order, only $\sim20-30$\% of the files within these datasets would need to be loaded in order to get all of the data within the selected regions, while $>80$\% of the files in the random dataset would be required. The smallest fraction of files were identified for the Hilbert and Morton datasets, with a slightly greater fraction being identified for the sliced dataset. The sliced dataset performed particularly well in this case because the selectors used were cubes and did not preferentially select along any one dimension. \todo{comment on mem and performance at order 7 for morton and hilbert}
+Many more files are identified for the random dataset than those datasets with localized partitioning of the domain. Above an order of 3, very few files could be excluded for the random dataset. This was not true for the localized partitioning schemes. At the highest order, only $\sim20-30$\% of the files within these datasets would need to be loaded in order to get all of the data within the selected regions, while $\sim80$\% of the files in the random dataset would be required. The smallest fraction of files were identified for the Hilbert and Morton datasets, with a slightly greater fraction being identified for the sliced dataset. For a 6th order index and below, queries on the Morton and Hilbert partitioned datasets are the fastest. An index order of 7 provides refinement beyond the 6th order curves used to partition the dataset between the files and the required for queries on these datasets increases dramatically. The sliced dataset performed particularly well in this case because the selectors used were cubes and did not preferentially select along any one dimension. 
 
 %---------------------------------------------------------------------------------
 % SUMMARY & DISCUSSION
@@ -332,7 +332,7 @@ M. Turk would like to acknowledge \todo{grants, people, places}
 \item Improve conclusion
 \item Acknowledgements
 \item Non-uniform test data set?
-\item Double check figure descriptions match figures (line colors esp)
+\item Performance of runs on cosmology dataset?
 \item Move figures to the end for submission
 \end{itemize}
 }
