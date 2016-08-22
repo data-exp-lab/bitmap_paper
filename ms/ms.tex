@@ -74,7 +74,7 @@ Current scientific datasets can reach unwieldy sizes that impede analysis and sc
 %---------------------------------------------------------------------------------
 % INTRO
 \section{Introduction}\label{S:intro}
-Continuing advances in both hardware and software facilitate astrophysical datasets of growing complexity and size. The datasets produced by numerical simulations can currently reach sizes of a $\sim$100\TB{ }split across hundreds of files \citep[e.g.][]{Croft2015}. For even simple analysis tasks, the cost of incrementally reading datasets this large into memory is quite high. This problem is not limited to theoretical work. During operations the Large Synoptic Survey Telescope (LSST) will produce 15\TB{ }of data each night \citep{Juric2015a}. In order to analyze such large datasets, we need innovative techniques for quickly indexing and selecting data without loading the entire dataset into memory. We present a technique for using Morton bitmap indexes to map files and accelerate data analysis. \S\ref{S:theory} provides background information on the file indexing scheme presented here, \S\ref{S:methods} describes the methods used to construct the indexes and use them to identify files for queries, \S\ref{S:tests} presents several tests demonstrating the speed-up provided for querying the data, and \S\ref{S:discuss} summarizes the advantages, describes areas for application, and proposes areas for future improvement.
+Continuing advances in both hardware and software facilitate astrophysical datasets of growing complexity and size. The datasets produced by numerical simulations can currently reach sizes of $\sim$100\TB{ }split across hundreds of files \citep[e.g.][]{Croft2015}. For even simple analysis tasks, the cost of incrementally reading datasets this large into memory is quite high. This problem is not limited to theoretical work. During operations the Large Synoptic Survey Telescope (LSST) will produce 15\TB{ }of data each night \citep{Juric2015a}. In order to analyze such large datasets, we need innovative techniques for quickly indexing and selecting data without loading the entire dataset into memory. We present a technique for using Morton bitmap indexes to map files and accelerate data analysis. \S\ref{S:theory} provides background information on the file indexing scheme presented here, \S\ref{S:methods} describes the methods used to construct the indexes and use them to identify files for queries, \S\ref{S:tests} presents several tests demonstrating the speed-up provided for querying the data, and \S\ref{S:discuss} summarizes the advantages, describes areas for application, and proposes areas for future improvement.
 
 %---------------------------------------------------------------------------------
 %---------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ Continuing advances in both hardware and software facilitate astrophysical datas
 %---------------------------------------------------------------------------------
 % DOMAIN DECOMP
 \subsection{Domain Partitioning Between Files}\label{SS:decomp}
-A common analysis task is the selection of data within a subset of the full domain. If the dataset is split across multiple files, either due to size constraints or to allow for parallel I/O, such selections require every file to be loaded and parsed in order to assemble all of the data within the selection criteria. This process can be very costly in terms of both the memory required to store the data and the time required to read each file. However, if the contents of the files are mapped in advanced, only the files touched by the selection will need to be loaded. This is particularly effective for partitioning schemes that are localized within the domain. If each file contains data that are localized to one part of the domain, selections of contiguous sub-sections within the domain will require fewer files to be loaded. Figure \ref{fig:files} shows four examples of possible partitions of a two-dimensional spatial domain split equally between 8 files. 
+A common analysis task is the selection of data within a subset of the full domain; we use the term ``selector" to refer to the selection operator. If the dataset is split across multiple files, either due to size constraints or to allow for parallel I/O, such selections require every file to be loaded and parsed in order to assemble all of the data within the selection criteria. This process can be very costly in terms of both the memory required to store the data and the time required to read each file. However, if the contents of the files are mapped in advanced, only the files touched by the selection will need to be loaded. This is particularly effective for partitioning schemes that are localized within the domain. If each file contains data that are localized to one part of the domain, selections of contiguous sub-sections within the domain will require fewer files to be loaded. Figure \ref{fig:files} shows four examples of possible partitions of a two-dimensional spatial domain split equally between 8 files. 
 %
 \begin{figure}[htbp]
 \begin{center}
@@ -109,13 +109,13 @@ Figure \ref{fig:selectors} shows examples of three selections within the above d
 \end{center}
 \end{figure}
 %
-For the smallest selector (first row), the random domain decomposition (a) already requires half of the files to be loaded while more localized schemes require much fewer. Similarly, while the sliced domain partition (b), requires the fewest files to be loaded when the selector is oriented in the same direction as the slicing (second row), it requires all of the files when the selector is perpendicular to the slicing (third row). While some datasets may have information on the domain range covered by each file, the partitioning scheme used for simulation output is often decided at runtime, can be system dependent, and may be imperfect. 
+For the smallest selector (first row), the random domain decomposition (a) already requires half of the files to be loaded while more localized schemes require much fewer. Similarly, while the sliced domain partition (b), requires the fewest files to be loaded when the selector is oriented in the same direction as the slicing (second row), it requires \textit{all} of the files when the selector is perpendicular to the slicing (third row). While some datasets may have information on the domain range covered by each file, the partitioning scheme used for simulation output is often decided at runtime, can be system dependent, and may be imperfect. 
 
 Files are often partitioned for parallel I/O such that each processor outputs data on the portion of the domain it is responsible for processing. To limit the cost of communication between processors, the domain will be split across processors such that neighboring processors are responsible for neighboring parts of the domain. This means that, although the overall partitioning scheme may be known for a given dataset, the exact order of the files will be dependent on the configuration of the processors at runtime. 
 
 The partitioning can also be imperfect if the domain decomposition is not perfect at the time of output. For instance, in astrophysical N-body simulations, it is possible for particles to travel from one processor's domain to another. In this case, the partition will only be perfect directly following an update to the domain decomposition. 
 
-In cases where the exact file organization is not known or imperfect, it is advantageous to map the files post-process in order to speed up selections for analysis. Although the same result can be achieved by re-sorting the data itself, creating the map can be less computationally less expensive than re-sorting the data, can be saved for use with multiple selections, and does not required write access, which may not be feasible as in the case of datasets shared by large, distributed communities.
+In cases where the exact file organization is not known or imperfect, it is advantageous to map the files post-process in order to speed up selections for analysis. Although the same result can be achieved by re-sorting the data itself, creating the map can be less computationally less expensive than re-sorting the data, can be saved for use with multiple selections, and does not required write access; this is typically not feasible, especially in the case of datasets shared by large, distributed communities.
 
 %---------------------------------------------------------------------------------
 % MORTON INDICES
@@ -142,12 +142,12 @@ In cases where data attributes can take on a finite set of values, one bitmap is
 
 For each file within a dataset, the Morton indices touched by the data within that file can then be stored in a bitmap index for future searches where the value of bit $j$ indicates whether or not Morton index $j$ is touched by the file in question. For Morton indexing of order $k$, this would result in a bitmap of length $2^{Nk}$ bits per file. For large bitmaps, this can become costly in terms of memory and the time required to perform bitmap operations. However, Enhanced Word-Aligned Hybrid (EWAH) compression can be used to limit these costs, particularly when the domain is densely or sparsely populated in localized regions \citep{Wu2001,Lemire2010,Kaser2016}. 
 
-An EWAH compressed bitmap will be smaller when there are long runs of identical values. This means that an EWAH compressed bitmap will be smallest if either all or none of its bits are set. An uncompressed bitmap would require the same, maximum, amount of memory in both of these cases. The locality of Morton indices takes advantage of the EWAH compression. If there are regions of the domain that are densely/sparsely populated, there Z-order space filling curve ensures that the bits denoting those regions will be adjacent, increasing the likelihood that there will be runs of identical (set/unset) bits and limiting the size of the compressed bitmaps.
+An EWAH compressed bitmap will be smaller when there are long sequences, or ``runs," of identical values. This means that an EWAH compressed bitmap will be smallest if either all or none of its bits are set. An uncompressed bitmap would require the same, maximum, amount of memory in both of these cases. The locality of Morton indices takes advantage of the EWAH compression. If there are regions of the domain that are densely/sparsely populated, there Z-order space filling curve ensures that the bits denoting those regions will be adjacent, increasing the likelihood that there will be runs of identical (set/unset) bits and limiting the size of the compressed bitmaps.
 
 %---------------------------------------------------------------------------------
 % COLLISIONS
 \subsection{Collisions}
-It is possible that two files will contain data within the same Morton cell. This would mean that any time that cell is touched by a selection, both files would need to be loaded even if the selection only touches data from one of the files. Figure \ref{fig:collision} provides an example of collisions between two files. In panel (a) of Figure \ref{fig:collision}, purple cells are those that contain data from both files, a collision, for a 3rd order Morton index. Any selector that contained one of those cells would need to load all of the data from both files, even if it only selected part of the cell.
+It is possible that two files will contain data within the same Morton cell.  This would mean that any time that cell is touched by a selection, both files would need to be loaded even if the selection only touches data from one of the files. Figure \ref{fig:collision} provides an example of collisions between two files. In panel (a) of Figure \ref{fig:collision}, purple cells are those that contain data from both files, a collision, for a 3rd order Morton index. Any selector that contained one of those cells would need to load all of the data from both files, even if it only selected part of the cell.  Where the data is highly-concentrated in a central region (for instance, in a galaxy formation simulation with particles centrally-concentrated) this can mean that some regions suffer from worst-case scenario collision.
 %
 \begin{figure}[htbp]
 \begin{center}
@@ -202,10 +202,10 @@ The basic procedure for constructing the bitmap index is as follows:
 \item {\bf Compute coarse indices.} For each file in the data set, read in the data and compute the indices of Morton cells at a given coarse order that are touched by data contained within that file. These coarse indices are then stored by setting the corresponding bits in an EWAH compressed bitmap.
 \item {\bf Find collisions.} The indices of coarse cells that are touched by data in more than one file (collisions) are located using bitwise operations on the file bitmaps. These indices are also stored in an EWAH compressed bitmap.
 \item {\bf Compute refined indices.} For each file in the data set, read in the data and compute the indices of Morton cells at a given refined order within coarse cells with collisions that are touched by that file. These refined indices are stored in a map from coarse Morton index to an EWAH compressed bitmap of refined Morton indices within that cell.
-\item {\bf Output bitmaps.} The EWAH compressed bitmaps for the coarse indices, refined indices, and collisions are saved to a single file.
+\item {\bf Output bitmaps.} The EWAH compressed bitmaps for the coarse indices, refined indices, and collisions are saved to an external index file.
 \end{enumerate}
 
-For large datasets and/or high levels of refinement, this can be a time consuming process. However, it must only be done once. For future selections, the bitmap can be quickly loaded and used to identify files in less time than would be required to load and query each file within the dataset individually. Selection using a loaded bitmap goes as follows:
+For large datasets and/or high levels of refinement, this can be a time consuming process; fortunately, it must only be done once. For future selections, the bitmap can be quickly loaded and used to identify files in less time than would be required to load and query each file within the dataset individually. Selection using a loaded bitmap goes as follows:
 \begin{enumerate}
 \item {\bf Construct selector bitmap.} In the same way each file was mapped, the indices of Morton cells touched by the selector are stored in a bitmap. This is done by checking for intersection of the selector with Morton cells at the order of the coarse bitmaps. For contiguous selectors, this is done at lower order (parent) cells first and continued recursively until the order of the coarse bitmap is reached. 
 \begin{itemize}
@@ -302,12 +302,20 @@ Currently, this technique is most useful for datasets split across multiple file
 %---------------------------------------------------------------------------------
 % CODE
 \section{Code}\label{S:code}
-These procedures were implemented as part of the \todo{X.X} version of {\tt yt} python package \citep{Turk20d11a} in order to facilitate the analysis of large astrophysical N-body simulations. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016}. All of the code used to run and plot the tests presented here is available for download at \todo{website}.
+These procedures have been implemented as part of the {\tt yt} python package
+\citep{Turk20d11a} in order to facilitate the analysis of large astrophysical
+N-body simulations; currently undergoing review for inclusion in a future version of {\tt yt} (3.4 or later), our implementation is available at \url{https://bitbucket.org/langmm/yt-bitmap}. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016}. All of the code used to run and plot the tests presented here is available for download at \todo{website}.
 
 %---------------------------------------------------------------------------------
 % ACKNOWLEDGMENTS
 \acknowledgments
-M. Turk would like to acknowledge \todo{grants, people, places}
+This publication is supported in part by the Gordon and Betty Moore
+Foundation’s Data-Driven Discovery Initiative through Grant GBMF4561 to Matthew
+Turk.  This material is based upon work supported by the National Science
+Foundation under Grant No.~ACI-1535651.  The authors would like to thank Daniel
+Lemire for his open source EWAH implementation.  {\tt yt} is developed by a
+large number of independent research from numerous institutions around the
+world.  Their committment to open science has helped make this work possible.
 
 %---------------------------------------------------------------------------------
 % REFERENCES
@@ -330,7 +338,6 @@ M. Turk would like to acknowledge \todo{grants, people, places}
 \todo{To do:
 \begin{itemize}
 \item Improve conclusion
-\item Acknowledgements
 \item Non-uniform test data set?
 \item Performance of runs on cosmology dataset?
 \item Move figures to the end for submission
