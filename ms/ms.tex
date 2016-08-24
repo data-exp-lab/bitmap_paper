@@ -95,7 +95,7 @@ A common analysis task is the selection of data within a subset of the full doma
 \end{figure}
 %
 
-Panel (a) is an example where random parts of the domain are contained within each file. In such a case, many files will need to be loaded for contiguous selections within the domain. In panel (b), the domain was split between the files along the $x$ dimension. Fewer files will need to be loaded for queries along the $y$-dimension, but contiguous selection in $x$ will still require a greater number of files since the partition is not well localized in that dimension. Panels (c) and (d) are both examples of partitioning the domain between the files along a space filling curve \citep[Morton and Hilbert curves respectively;][]{Morton1996,Hilbert1970}. These partitions have the greatest chance of limiting the number of files that must be loaded for a contiguous selection with slightly improved localization for the Hilbert curve.
+Panel (a) is an example where random parts of the domain are contained within each file. In such a case, many files will need to be loaded for contiguous selections within the domain. In panel (b), the domain was split between the files along the $x$ dimension. Fewer files will need to be loaded for queries along the $y$-dimension, but contiguous selection in $x$ will still require a greater number of files since the partition is not well localized in that dimension. Panels (c) and (d) are both examples of partitioning the domain between the files along a space filling curve \citep[Morton and Hilbert curves respectively;][]{Morton1996,Hilbert1970}. These partitions have the greatest chance of limiting the number of files that must be loaded for a contiguous selection with slightly improved localization for the Hilbert curve. Consequently, Hilbert curves have also been used for load-balancing in parallel simulation codes like {\sc Gadget-2} \citep{Springel2005b} and RAMSES \citep{Teyssier2001}.
 
 Figure \ref{fig:selectors} shows examples of three selections within the above domain partitions. 
 %
@@ -179,7 +179,7 @@ For the random domain partition in panel (a), every cell within a 1st order Mort
 %---------------------------------------------------------------------------------
 % GHOST ZONES
 \subsection{Ghost Zones}
-It is often the case that, in selecting a region, additional padding around the region should be included in the selection. This is particularly useful for algorithms that need information about neighboring points in the domain \citep[e.g. gas properties in simulations using Smoothed Particle Hydrodynamics; SPH;][]{Springel2001,Springel2005b}. For Morton indices, this is straightforward as the indices neighboring Morton cells can be found by incrementing the bits corresponding to each dimension. We have included the ability to pad selectors with some number of Morton cells referred to as `ghost zones'. Those files that touch ghost zones, but not the selector itself are referred to below as `ghost files'. 
+It is often the case that, in selecting a region, additional padding around the region should be included in the selection. This is particularly useful for algorithms that need information about neighboring points in the domain \citep[e.g. gas properties in simulations using Smoothed Particle Hydrodynamics; SPH;][]{Monaghan1992,Springel2001,Springel2005b}. For Morton indices, this is straightforward as the indices neighboring Morton cells can be found by incrementing the bits corresponding to each dimension. We have included the ability to pad selectors with some number of Morton cells referred to as `ghost zones'. Those files that touch ghost zones, but not the selector itself are referred to below as `ghost files'. 
 
 Depending on how the domain is split between files, the inclusion of ghost zones may or may not increase the number of files that need to be loaded. Figure \ref{fig:ghosts} shows an example of a ghost zone around the first selector from Figure \ref{fig:selectors}. 
 %
@@ -238,7 +238,7 @@ The order of the Morton indices used to map the files determines the time requir
 \end{figure}
 %
 
-Below a bitmap index order of 4, there are collisions between multiple files within every cell, resulting in a larger number of files being identified. However, as the order increases, the number of collisions drops and the file count plateaus at $\sim25$\%. For a 7th order bitmap index, selection requires $>100\times$ the time that the same selection took using a 6th order index, but there is no change in the number of files indicated. A 6th order index is sufficient to identify the minimal set of files touched by the selectors in this case because the dataset was partitioned between the files along a 6th order Hilbert space filling curve. While it is generally true that the time required to identify files using a bitmap index will increase exponentially with the size of the index, the order of the index that results in the minimal number of files for any dataset will depend upon how the domain is partitioned between files (see \S\ref{SS:test_decomp}). The memory required to store the index for the test dataset scales according to $\propto2^{2k}$, for a $k^{\mbox{th}}$ order index. If uncompressed bitmaps had been used instead of EWAH compressed bitmap, the memory would have scaled with the total number of cells contained within the 3-dimensional test domain ($2^{3k}$).
+Below a bitmap index order of 4, there are collisions between multiple files within every cell, resulting in a larger number of files being identified. However, as the order increases, the number of collisions drops and the file count plateaus at $\sim25$\%. This translates to a $\sim75$\% reduction in the memory and time required for processing files, a significant increase in performance. For a 7th order bitmap index, selection requires $>100\times$ the time that the same selection took using a 6th order index, but there is no change in the number of files indicated. A 6th order index is sufficient to identify the minimal set of files touched by the selectors in this case because the dataset was partitioned between the files along a 6th order Hilbert space filling curve. While it is generally true that the time required to identify files using a bitmap index will increase exponentially with the size of the index, the order of the index that results in the minimal number of files for any dataset will depend upon how the domain is partitioned between files (see \S\ref{SS:test_decomp}). The memory required to store the index for the test dataset scales according to $\propto2^{2k}$, for a $k^{\mbox{th}}$ order index. If uncompressed bitmaps had been used instead of EWAH compressed bitmap, the memory would have scaled with the total number of cells contained within the 3-dimensional test domain ($2^{3k}$).
 
 % SECONDARY REFINEMENT
 \subsubsection{Collision Refinement}\label{SSS:test_order2}
@@ -253,7 +253,7 @@ Increasing the refinement of the primary index does so for the entire domain and
 \end{figure}
 %
 
-When the order of the second refined index is low, the first index is larger resulting in fewer cells with collisions at the first index and more at the second. The reverse is true when the order of second index is higher. As the overall order is held constant, the same number of files are identified regardless of the orders of the first and second indexes. The time required to identify the files is minimized when cells within the first index become saturated with collisions. For secondary indexes of order 2 or lower, the large increase in performance offered for increases in the index order results from the reduction in the total complexity of the index which translates to shorter times for bitwise operations and less memory required for storage. Above 2nd order, the overhead from storing and accessing more complex EWAH compressed bitmaps for each collision begins to flatten the memory scaling and increase the time required for queries  However, selections using higher order secondary indices still require less time than in the case where only a single index is used. 
+When the order of the second refined index is low, the first index is larger resulting in fewer cells with collisions at the first index and more at the second. The reverse is true when the order of second index is higher. As the overall order is held constant, the same number of files are identified regardless of the orders of the first and second indexes. The time required to identify the files is minimized when cells within the first index become saturated with collisions. For secondary indexes of order 2 or lower, the large increase in performance offered for increases in the index order results from the reduction in the total complexity of the index which translates to shorter times for bitwise operations and less memory required for storage. Above 2nd order, the overhead from storing and accessing more complex EWAH compressed bitmaps for each collision begins to flatten the memory scaling and increase the time required for queries.  However, selections using higher order secondary indices still require less time than in the case where only a single index is used. 
 
 The optimal value for the orders of the first and second indexes will depend upon the dataset in question. The density of data points within the test dataset used here is relatively uniform throughout the domain and does not need a high level of refinement at collisions. However, if a data set were less uniform with concentrations of points, the optimal order of the second index for performance may be higher.
 
@@ -304,7 +304,7 @@ Currently, this technique is most useful for datasets split across multiple file
 \section{Code}\label{S:code}
 These procedures have been implemented as part of the {\tt yt} python package
 \citep{Turk20d11a} in order to facilitate the analysis of large astrophysical
-N-body simulations; currently undergoing review for inclusion in a future version of {\tt yt} (3.4 or later), our implementation is available at \url{https://bitbucket.org/langmm/yt-bitmap}. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016}. All of the code used to run and plot the tests presented here is available for download at \todo{website}.
+N-body simulations; currently undergoing review for inclusion in a future version of {\tt yt} (3.4 or later), our implementation is available at \url{https://bitbucket.org/langmm/yt-bitmap}. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016} and exposed to Python using Cython \citep{Behnel2011}. All of the code used to run and plot the tests presented here is available for download at \todo{website}.
 
 %---------------------------------------------------------------------------------
 % ACKNOWLEDGMENTS
@@ -334,15 +334,15 @@ world.  Their committment to open science has helped make this work possible.
 
 %---------------------------------------------------------------------------------
 % COMMENTS
-\newpage
-\todo{To do:
-\begin{itemize}
-\item Improve conclusion
-\item Non-uniform test data set?
-\item Performance of runs on cosmology dataset?
-\item Move figures to the end for submission
-\item iPython notebook for running tests
-\end{itemize}
-}
+%\newpage
+%\todo{To do:
+%\begin{itemize}
+%\item Improve conclusion
+%\item Non-uniform test data set?
+%\item Performance of runs on cosmology dataset?
+%\item Move figures to the end for submission
+%\item iPython notebook for running tests
+%\end{itemize}
+% }
 
 \end{document}
