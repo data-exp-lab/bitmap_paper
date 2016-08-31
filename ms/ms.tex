@@ -288,6 +288,8 @@ As discussed in \S\ref{SS:decomp}, a bitmap index is more effective in cases whe
 
 Many more files are identified for the random dataset than those datasets with localized partitioning of the domain. Above an order of 3, very few files could be excluded for the random dataset. This was not true for the localized partitioning schemes. At the highest order, only $\sim20-30$\% of the files within these datasets would need to be loaded in order to get all of the data within the selected regions, while $\sim80$\% of the files in the random dataset would be required. The smallest fraction of files were identified for the Hilbert and Morton datasets, with a slightly greater fraction being identified for the sliced dataset. For a 6th order index and below, queries on the Morton and Hilbert partitioned datasets are the fastest. An index order of 7 provides refinement beyond the 6th order curves used to partition the dataset between the files and the required for queries on these datasets increases dramatically. The sliced dataset performed particularly well in this case because the selectors used were cubes and did not preferentially select along any one dimension. 
 
+Overall, this technique offers a considerable improvement in performance over other methods that require reading, evaluating and discarding all of the particles.
+
 %---------------------------------------------------------------------------------
 % SUMMARY & DISCUSSION
 \section{Summary \& Discussion}\label{S:discuss}
@@ -295,7 +297,7 @@ Mapping files using Morton bitmap indexes speeds up analysis of large datasets s
 
 Without an index, queries require loading the data contained in every file into memory and then searching the data for those points that are selected by the query. With a bitmap index, queries require loading the index, using it to identify the files touched by the query, reading in the data contained within the identified files, and searching the data for points selected by the query. In this way, the bitmap index can decrease the computational cost of reading in the data and selecting data points if it identifies a subset of the total number of files. While using an existing bitmap index decreases the time required for queries in this case, constructing a bitmap index can be more computationally expensive than directly querying the data without a bitmap index. Therefore, in the case where only a small number of selections need to be made, it will be more efficient to perform direct queries of the data than to construct and utilize the bitmap index.
 
-Bitmap indexing is particularly useful in astronomy and astrophysics. Output from N-body simulations is often split between multiple files to take advantage of parallel I/O and the domain decomposition generally leads to localized partitioning between files \citep{Springel2001,Springel2005b,Hopkins2015}. \todo{applications outside astronomy}
+Bitmap indexing is particularly useful in astronomy and astrophysics. Output from N-body simulations is often split between multiple files to take advantage of parallel I/O and the domain decomposition generally leads to localized partitioning between files \citep{Springel2001,Springel2005b,Hopkins2015}. %\todo{applications outside astronomy}
 
 Currently, this technique is most useful for datasets split across multiple files. However, it can also be applied to single files by dividing the file's contents into chunks. As in the multi-file case, the single file would need to be organized such that chunks were localized within the domain to take full advantage of the bitmaps. In addition, while the current implementation of this method is designed for three-dimensional spatial datasets like those produced by astrophysical simulations, the same methods can be applied to non-spatial datasets with arbitrary dimensionality.
 
@@ -304,7 +306,7 @@ Currently, this technique is most useful for datasets split across multiple file
 \section{Code}\label{S:code}
 These procedures have been implemented as part of the {\tt yt} python package
 \citep{Turk20d11a} in order to facilitate the analysis of large astrophysical
-N-body simulations; currently undergoing review for inclusion in a future version of {\tt yt} (3.4 or later), our implementation is available at \url{https://bitbucket.org/langmm/yt-bitmap}. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016} and exposed to Python using Cython \citep{Behnel2011}. All of the code used to run and plot the tests presented here is available for download at \todo{website}.
+N-body simulations; currently undergoing review for inclusion in a future version of {\tt yt} (3.4 or later), our implementation is available at \url{https://bitbucket.org/langmm/yt-bitmap}. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016} and exposed to Python using Cython \citep{Behnel2011}. 
 
 %---------------------------------------------------------------------------------
 % ACKNOWLEDGMENTS
@@ -314,8 +316,8 @@ Foundation’s Data-Driven Discovery Initiative through Grant GBMF4561 to Matthe
 Turk.  This material is based upon work supported by the National Science
 Foundation under Grant No.~ACI-1535651.  The authors would like to thank Daniel
 Lemire for his open source EWAH implementation.  {\tt yt} is developed by a
-large number of independent research from numerous institutions around the
-world.  Their committment to open science has helped make this work possible.
+large number of independent researchers from numerous institutions around the
+world.  Their commitment to open science has helped make this work possible.
 
 %---------------------------------------------------------------------------------
 % REFERENCES
