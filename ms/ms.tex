@@ -68,7 +68,7 @@
 
 \usepackage{hyperref}
 
-\makeatletter
+%\makeatletter
 
 %---------------------------------------------------------------------------------
 % CONTROL THINGS
@@ -86,11 +86,11 @@
 
 \title{Bitmap Indexing for Fast Analysis of Large Astrophysical Datasets}
 
-\author{Meagan~Lang~and~Matthew~Turk}
+\author{Meagan~Lang~and~Matthew~Turk%
 \thanks{Manuscript received Sept. 1, 2016. This publication is supported in part by the Gordon and Betty Moore Foundation'€™s Data-Driven Discovery Initiative through Grant GBMF4561 to Matthew
 Turk. This material is based upon work supported by the National Science
-Foundation under Grant No.~ACI-1535651. }
-\thanks{The authors are with the National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL 61801 USA (e-mail: langmm@illinois.edu)}
+Foundation under Grant No.~ACI-1535651. }%
+\thanks{The authors are with the National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL 61801 USA (e-mail: langmm@illinois.edu)}}
 
 %\altaffiltext{1}{National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL email: {\tt langmm@illinois.edu} \& {\tt mjturk@illinois.edu}} 
 
@@ -99,7 +99,7 @@ Foundation under Grant No.~ACI-1535651. }
 \markboth{Journal of Computing in Science and Engineering,~Vol.~X, No.~X, Month~Year}%
 {Bitmap Indexing for Fast Analysis of Large Astrophysical Datasets}
 
-%\maketitle
+\maketitle
 
 %---------------------------------------------------------------------------------
 % ABSTRACT (145 words)
@@ -113,8 +113,7 @@ Current scientific datasets can reach unwieldy sizes that impede analysis and sc
 %Astrophysics, Data analysis, Indexes, Memory management, Scientific computing
 %\end{IEEEkeywords}
 
-\maketitle
-%\IEEEpeerreviewmaketitle
+\IEEEpeerreviewmaketitle
 
 %---------------------------------------------------------------------------------
 %---------------------------------------------------------------------------------
@@ -135,7 +134,7 @@ A common analysis task is the selection of data within a subset of the full doma
 \ifinclfig
 	\begin{figure}[htbp]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/files.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang1.png}
 	\caption{Examples of four different schemes for partitioning a 2D domain between 8 files. Each 	color represents a different file.}
 	\label{fig:files}
 	\end{center}
@@ -150,9 +149,9 @@ Figure \ref{fig:selectors} shows examples of three selections within the above d
 \ifinclfig
 	\begin{figure}[htbp]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/selector1.png}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/selector5.png}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/selector4.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang2a.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang2b.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang2c.png}
 	\caption{Examples of file selection for four different domain partitions and three different shaded 	selectors. The number of files above each images is the number of files that must be loaded in order to get all of the data within the selected region.}
 	\label{fig:selectors}
 	\end{center}
@@ -175,7 +174,7 @@ Morton ordering maps multidimensional data onto a one-dimensional space filling 
 \ifinclfig
 	\begin{figure}[htbp]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/zorder.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang3.png}
 	\caption{Example of 3rd order Morton curve in two dimensions. The bits of the $x$ and $y$ indices are interleaved to generate a single integer that fully describes the cell's location within the two-dimensional domain to within $1/2^{3}$th of the domain in each dimension.}
 	\label{fig:zorder}
 	\end{center}
@@ -204,7 +203,7 @@ It is possible that two files will contain data within the same Morton cell.  Th
 \ifinclfig
 	\begin{figure}[htbp]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/collisions.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang4.png}
 	\caption{Examples of a collision between two files. The red points and blue points are contained by two different files. The larger grid in both panels denotes the boundaries of 3rd order Morton cells.  The cells containing points from either file are shaded accordingly such that cells containing points from both files are purple. The smaller grids within these cells on the right are the boundaries of 2nd order Morton cells refining the collisions.}
 	\label{fig:collision}
 	\end{center}
@@ -221,7 +220,7 @@ Collisions are more common for file partitioning schemes that are not localized.
 \ifinclfig
 	\begin{figure}[htbp]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/index.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang5.png}
 	\caption{Examples of collisions for four different domain partitioning schemes. The heavy black lines denote 1st order Morton cells. The presence of more that one file (color) within a Morton cell indicates a collision.}
 	\label{fig:collision_files}
 	\end{center}
@@ -242,7 +241,7 @@ Depending on how the domain is split between files, the inclusion of ghost zones
 \ifinclfig
 	\begin{figure}[htbp]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/ghosts.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang6.png}
 	\caption{Examples of a selector ghost zone with a width of one Morton cell at an index order of 3 for  four different domain partitioning schemes. The shaded circular region is the selector and the shaded box is the ghost zone. Different partitioning schemes will lead to different numbers of ghost files.}
 	\label{fig:ghosts}
 	\end{center}
@@ -290,7 +289,7 @@ The order of the Morton indices used to map the files determines the time requir
 \ifinclfig
 	\begin{figure}[htbp]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order1_or0.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang7.png}
 	\caption{Dependence of query time (top), fraction of files selected/cells with collisions (middle), and index size (bottom) on the total refinement of the bitmap index. The solid black lines correspond to the query times and files identified by just the selectors. The dashed blue lines correspond to the query times and additional files selected when a ghost zone with the width of one Morton cell is added around the selectors. The dash-dotted line in the middle panel shows the fraction of cells with collisions between files.}
 	\label{fig:test_order1}
 	\end{center}
@@ -307,7 +306,7 @@ Increasing the refinement of the primary index does so for the entire domain and
 \ifinclfig
 	\begin{figure}[htbp]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order2_to6.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang8.png}
 	\caption{Dependence of query time (top), fraction of files selected/cells with collisions (middle), and memory required to store the index (bottom) on the order of the secondary index used to refine collisions. In the middle panel, the solid black line corresponds with the fraction of files identified, the dash-dotted blue line is the fraction of cells at the first index level that have collisions, and the dotted red line is the fraction of cells at the second index level that have collisions.}
 	\label{fig:test_order2}
 	\end{center}
@@ -327,7 +326,7 @@ The time required to identify files touched by a selection will also depend upon
 \ifinclfig
 	\begin{figure}[htbp]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_selector.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang9.png}
 	\caption{Dependence of query time (top) and number of files selected (bottom) on selector width in terms of the total domain width. The solid black lines correspond to the query times and files identified by the selectors alone. The dashed blue lines correspond the query times and additional files identified when a ghost zone with a width of one cell is added to the selector.}
 	\label{fig:test_size}
 	\end{center}
@@ -345,7 +344,7 @@ As discussed in \S\ref{SS:decomp}, a bitmap index is more effective in cases whe
 \ifinclfig
 	\begin{figure}[hbpt]
 	\begin{center}
-	\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_decomp_to0.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/lang10.png}
 	\caption{Dependence of query time (top), the number of files selected (middle), and the size of the index (bottom) on index order for different domain partitioning between files. The dotted magenta lines are for a randomly partitioned dataset, the cyan dashed-dotted lines are a dataset partitioned by equal slices alone one dimension, the dashed red lines are a dataset partitioned along an 6th order Morton curve, and the solid blue lines are a dataset partitioned along a 6th order Hilbert curve.}
 	\label{fig:test_decomp}
 	\end{center}
