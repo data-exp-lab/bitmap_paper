@@ -1,0 +1,15 @@
+To Whom It May Concern:
+
+As the size of scientific datasets increases, the computational resources required for analysis increase as well. In order for scientific discovery to keep pace with the growing volume of data, new techniques for reducing analysis overhead are required.
+
+In a paper entitled “Bitmap Indexing for Fast Analysis of Large Astrophysical Datasets”, we present a technique using nested Morton order bitmap indexes to reduce the time and memory required to query a dataset of discrete points split across multiple files. While this method was developed specifically to facilitate analysis of large astrophysical simulation datasets, it is not domain specific and can be applied to any large discrete dataset split across multiple files.
+
+Thank you for your consideration.
+
+Meagan Lang
+langmm@illinois.edu
+814-574-0105
+
+Matthew Turk
+mjturk@illinois.edu
+217-333-9880

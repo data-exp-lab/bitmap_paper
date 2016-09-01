@@ -87,14 +87,19 @@
 \title{Bitmap Indexing for Fast Analysis of Large Astrophysical Datasets}
 
 \author{Meagan~Lang~and~Matthew~Turk}
-\thanks{M. Lang and M. Turk were with the National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL 61801 USA e-mail: {\tt langmm@illinois.edu} \& {\tt mjturk@illinois.edu}}
-\thanks{Manuscript received Sept. 1, 2016}
+\thanks{Manuscript received Sept. 1, 2016. This publication is supported in part by the Gordon and Betty Moore Foundation'€™s Data-Driven Discovery Initiative through Grant GBMF4561 to Matthew
+Turk. This material is based upon work supported by the National Science
+Foundation under Grant No.~ACI-1535651. }
+\thanks{The authors are with the National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL 61801 USA (e-mail: langmm@illinois.edu)}
 
 %\altaffiltext{1}{National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL email: {\tt langmm@illinois.edu} \& {\tt mjturk@illinois.edu}} 
 
 %\altaffiltext{2}{National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL email:{\tt mjturk@illinois.edu}}
 
-\maketitle
+\markboth{Journal of Computing in Science and Engineering,~Vol.~X, No.~X, Month~Year}%
+{Bitmap Indexing for Fast Analysis of Large Astrophysical Datasets}
+
+%\maketitle
 
 %---------------------------------------------------------------------------------
 % ABSTRACT (145 words)
@@ -104,15 +109,18 @@ Current scientific datasets can reach unwieldy sizes that impede analysis and sc
 % Mapping data files in this manner will dramatically decrease the time and memory required for loading data during analysis without needing to re-order the data on disk.
 \end{abstract}
 
-%\keywords{methods: numerical}
+%\begin{IEEEkeywords}
+%Astrophysics, Data analysis, Indexes, Memory management, Scientific computing
+%\end{IEEEkeywords}
 
-\IEEEpeerreviewmaketitle
+\maketitle
+%\IEEEpeerreviewmaketitle
 
 %---------------------------------------------------------------------------------
 %---------------------------------------------------------------------------------
 % INTRO (183 words)
 \section{Introduction}\label{S:intro}
-Continuing advances in both hardware and software facilitate astrophysical datasets of growing complexity and size. The datasets produced by numerical simulations can currently reach sizes of $\sim$100\TB{ }split across hundreds of files \citep[e.g.][]{Croft2015}. For even simple analysis tasks, the cost of incrementally reading datasets this large into memory is quite high. This problem is not limited to theoretical work. During operations the Large Synoptic Survey Telescope (LSST) will produce 15\TB{ }of data each night \citep{Juric2015a}. In order to analyze such large datasets, we need innovative techniques for quickly indexing and selecting data without loading the entire dataset into memory. We present a technique for using Morton bitmap indexes to map files and accelerate data analysis. \S\ref{S:theory} provides background information on the file indexing scheme presented here, \S\ref{S:methods} describes the methods used to construct the indexes and use them to identify files for queries, \S\ref{S:tests} presents several tests demonstrating the speed-up provided for querying the data, and \S\ref{S:discuss} summarizes the advantages, describes areas for application, and proposes areas for future improvement.
+\IEEEPARstart{C}{ontinuing} advances in both hardware and software facilitate astrophysical datasets of growing complexity and size. The datasets produced by numerical simulations can currently reach sizes of $\sim$100\TB{ }split across hundreds of files \citep[e.g.][]{Croft2015}. For even simple analysis tasks, the cost of incrementally reading datasets this large into memory is quite high. This problem is not limited to theoretical work. During operations the Large Synoptic Survey Telescope (LSST) will produce 15\TB{ }of data each night \citep{Juric2015a}. In order to analyze such large datasets, we need innovative techniques for quickly indexing and selecting data without loading the entire dataset into memory. We present a technique for using Morton bitmap indexes to map files and accelerate data analysis. \S\ref{S:theory} provides background information on the file indexing scheme presented here, \S\ref{S:methods} describes the methods used to construct the indexes and use them to identify files for queries, \S\ref{S:tests} presents several tests demonstrating the speed-up provided for querying the data, and \S\ref{S:discuss} summarizes the advantages, describes areas for application, and proposes areas for future improvement.
 
 %---------------------------------------------------------------------------------
 %---------------------------------------------------------------------------------
@@ -371,10 +379,7 @@ N-body simulations; currently undergoing review for inclusion in a future versio
 % ACKNOWLEDGMENTS
 \section*{Acknowledgment}
 %\acknowledgments
-This publication is supported in part by the Gordon and Betty Moore
-Foundationâ€™s Data-Driven Discovery Initiative through Grant GBMF4561 to Matthew
-Turk.  This material is based upon work supported by the National Science
-Foundation under Grant No.~ACI-1535651.  The authors would like to thank Daniel
+The authors would like to thank Daniel
 Lemire for his open source EWAH implementation.  {\tt yt} is developed by a
 large number of independent researchers from numerous institutions around the
 world.  Their commitment to open science has helped make this work possible.
