@@ -1,20 +1,35 @@
 \newif\iftwocol
 \newif\ifplacefig
 \newif\ifdraft
+\newif\ifinclfig
+\newif\ifieee
+
+% For IEEE word count (no figs)
+\ieeetrue
+\twocolfalse
+\placefigtrue
+\inclfigtrue
+\draftfalse
 
 % For Draft
-\twocoltrue
-\placefigtrue
-\drafttrue
+%\ieeefalse
+%\twocoltrue
+%\placefigtrue
+%\inclfigtrue
+%\drafttrue
 
 % For ApJ preprint
+%\ieeefalse
 %\twocolfalse
 %\placefigfalse
+%\inclfigtrue
 %\draftfalse
 
 % For ArXiv
+%\ieeefalse
 %\twocoltrue
 %\placefigtrue
+%\inclfigtrue
 %\draftfalse
 
 %---------------------------------------------------------------------------------
@@ -22,7 +37,11 @@
 \iftwocol
 	\documentclass[apjl]{emulateapj}
 \else
-	\documentclass[preprint]{aastex}
+	\ifieee
+		\documentclass[journal]{IEEEtran}
+	\else
+		\documentclass[preprint]{aastex}
+	\fi
 \fi
 
 \pdfoutput=1
@@ -31,11 +50,23 @@
 \usepackage{graphicx}
 \usepackage{enumerate}
 \ifdraft
-	\usepackage{natbib}
-	\citestyle{apj}
-	\bibliographystyle{apj}
-	\bibpunct[,]{(}{)}{;}{a}{}{,}
+	\ifieee
+		\usepackage[numbers]{natbib}
+		\bibliographystyle{ieeetr}
+	\else
+		\usepackage{natbib}
+		\citepstyle{apj}
+		\bibliographystyle{apj}
+		\bibpunct[,]{(}{)}{;}{a}{}{,}
+	\fi
+\else
+	\ifieee
+		\usepackage[numbers]{natbib}
+		\bibliographystyle{ieeetr}
+	\fi
 \fi
+
+\usepackage{hyperref}
 
 \makeatletter
 
@@ -51,28 +82,35 @@
 % MANUSCRIPT INFO
 \begin{document}
 
-\shorttitle{Bitmap Indexing}
+%\shorttitle{Bitmap Indexing}
 
 \title{Bitmap Indexing for Fast Analysis of Large Astrophysical Datasets}
 
-\author{Meagan Lang\altaffilmark{1} \& Matthew Turk\altaffilmark{1}}
+\author{Meagan~Lang~and~Matthew~Turk}
+\thanks{M. Lang and M. Turk were with the National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL 61801 USA e-mail: {\tt langmm@illinois.edu} \& {\tt mjturk@illinois.edu}}
+\thanks{Manuscript received Sept. 1, 2016}
 
-\altaffiltext{1}{National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL email: {\tt langmm@illinois.edu} \& {\tt mjturk@illinois.edu}} 
+%\altaffiltext{1}{National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL email: {\tt langmm@illinois.edu} \& {\tt mjturk@illinois.edu}} 
 
 %\altaffiltext{2}{National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL email:{\tt mjturk@illinois.edu}}
 
+\maketitle
 
 %---------------------------------------------------------------------------------
-% ABSTRACT
+% ABSTRACT (145 words)
 \begin{abstract}
-Current scientific datasets can reach unwieldy sizes that impede analysis and scientific discovery. We present a method for using Morton order bitmap indexes to map the parts of the full domain touched by files within a dataset containing discrete points. This technique takes advantage of domain partitioning across multiple files and limits the volume of data that must be loaded into memory for a single query. This method is tested on mock datasets containing $1024^3$ three-dimensional points split across 512 files according to different partitioning schemes. Using Morton order bitmap indexes for localized partitioning schemes like the Hilbert space-filling curve, the number of files that must be loaded to access data for a sub-section of the domain will scale with the size of the sub-section and can be identified in under 0.01\,s even when the entire domain is included. Mapping data files in this manner will dramatically decrease the time and memory required for loading data during analysis without needing to re-order the data on disk.
+Current scientific datasets can reach unwieldy sizes that impede analysis and scientific discovery. We present a method for using Morton order bitmap indexes to map the parts of the full domain touched by files within a dataset containing discrete points. This technique takes advantage of domain partitioning across multiple files and limits the volume of data that must be loaded into memory for a single query. This method is tested on mock datasets containing 1024$^3$ three-dimensional points split across 512 files according to different partitioning schemes. Using Morton order bitmap indexes for localized partitioning schemes like the Hilbert space-filling curve, the number of files that must be loaded to access data for a sub-section of the domain will scale with the size of the sub-section and can be identified in under 0.01\,s even when the entire domain is included. 
+% Removed for CiSE 150 word limit
+% Mapping data files in this manner will dramatically decrease the time and memory required for loading data during analysis without needing to re-order the data on disk.
 \end{abstract}
 
-\keywords{methods: numerical}
+%\keywords{methods: numerical}
+
+\IEEEpeerreviewmaketitle
 
 %---------------------------------------------------------------------------------
 %---------------------------------------------------------------------------------
-% INTRO
+% INTRO (183 words)
 \section{Introduction}\label{S:intro}
 Continuing advances in both hardware and software facilitate astrophysical datasets of growing complexity and size. The datasets produced by numerical simulations can currently reach sizes of $\sim$100\TB{ }split across hundreds of files \citep[e.g.][]{Croft2015}. For even simple analysis tasks, the cost of incrementally reading datasets this large into memory is quite high. This problem is not limited to theoretical work. During operations the Large Synoptic Survey Telescope (LSST) will produce 15\TB{ }of data each night \citep{Juric2015a}. In order to analyze such large datasets, we need innovative techniques for quickly indexing and selecting data without loading the entire dataset into memory. We present a technique for using Morton bitmap indexes to map files and accelerate data analysis. \S\ref{S:theory} provides background information on the file indexing scheme presented here, \S\ref{S:methods} describes the methods used to construct the indexes and use them to identify files for queries, \S\ref{S:tests} presents several tests demonstrating the speed-up provided for querying the data, and \S\ref{S:discuss} summarizes the advantages, describes areas for application, and proposes areas for future improvement.
 
@@ -82,32 +120,36 @@ Continuing advances in both hardware and software facilitate astrophysical datas
 \section{Theory/Background}\label{S:theory}
 
 %---------------------------------------------------------------------------------
-% DOMAIN DECOMP
+% DOMAIN DECOMP (682 words)
 \subsection{Domain Partitioning Between Files}\label{SS:decomp}
 A common analysis task is the selection of data within a subset of the full domain; we use the term ``selector" to refer to the selection operator. If the dataset is split across multiple files, either due to size constraints or to allow for parallel I/O, such selections require every file to be loaded and parsed in order to assemble all of the data within the selection criteria. This process can be very costly in terms of both the memory required to store the data and the time required to read each file. However, if the contents of the files are mapped in advanced, only the files touched by the selection will need to be loaded. This is particularly effective for partitioning schemes that are localized within the domain. If each file contains data that are localized to one part of the domain, selections of contiguous sub-sections within the domain will require fewer files to be loaded. Figure \ref{fig:files} shows four examples of possible partitions of a two-dimensional spatial domain split equally between 8 files. 
 %
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/files.png}
-\caption{Examples of four different schemes for partitioning a 2D domain between 8 files. Each color represents a different file.}
-\label{fig:files}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[htbp]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/files.png}
+	\caption{Examples of four different schemes for partitioning a 2D domain between 8 files. Each 	color represents a different file.}
+	\label{fig:files}
+	\end{center}
+	\end{figure}
+\fi
 %
 
 Panel (a) is an example where random parts of the domain are contained within each file. In such a case, many files will need to be loaded for contiguous selections within the domain. In panel (b), the domain was split between the files along the $x$ dimension. Fewer files will need to be loaded for queries along the $y$-dimension, but contiguous selection in $x$ will still require a greater number of files since the partition is not well localized in that dimension. Panels (c) and (d) are both examples of partitioning the domain between the files along a space filling curve \citep[Morton and Hilbert curves respectively;][]{Morton1996,Hilbert1970}. These partitions have the greatest chance of limiting the number of files that must be loaded for a contiguous selection with slightly improved localization for the Hilbert curve. Consequently, Hilbert curves have also been used for load-balancing in parallel simulation codes like {\sc Gadget-2} \citep{Springel2005b} and RAMSES \citep{Teyssier2001}.
 
 Figure \ref{fig:selectors} shows examples of three selections within the above domain partitions. 
 %
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/selector1.png}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/selector5.png}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/selector4.png}
-\caption{Examples of file selection for four different domain partitions and three different shaded selectors. The number of files above each images is the number of files that must be loaded in order to get all of the data within the selected region.}
-\label{fig:selectors}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[htbp]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/selector1.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/selector5.png}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/selector4.png}
+	\caption{Examples of file selection for four different domain partitions and three different shaded 	selectors. The number of files above each images is the number of files that must be loaded in order to get all of the data within the selected region.}
+	\label{fig:selectors}
+	\end{center}
+	\end{figure}
+\fi
 %
 For the smallest selector (first row), the random domain decomposition (a) already requires half of the files to be loaded while more localized schemes require much fewer. Similarly, while the sliced domain partition (b), requires the fewest files to be loaded when the selector is oriented in the same direction as the slicing (second row), it requires \textit{all} of the files when the selector is perpendicular to the slicing (third row). While some datasets may have information on the domain range covered by each file, the partitioning scheme used for simulation output is often decided at runtime, can be system dependent, and may be imperfect. 
 
@@ -122,13 +164,15 @@ In cases where the exact file organization is not known or imperfect, it is adva
 \subsection{Morton Indices}
 Morton ordering maps multidimensional data onto a one-dimensional space filling curve \citep{Morton1996}. This is done by breaking up the domain into cells where each cell's position within the $N$-dimensional domain can be described by $N$ integers. The Morton index of the cell is then created by interleaving the bits of the $N$ integers to create a single integer that fully describes the cell's position (see panel (b) Figure \ref{fig:zorder}). As seen in panel (a) of Figure \ref{fig:zorder}, ordering of the cells by their Morton indices forms a space filling Z-curve.
 %
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/zorder.png}
-\caption{Example of 3rd order Morton curve in two dimensions. The bits of the $x$ and $y$ indices are interleaved to generate a single integer that fully describes the cell's location within the two-dimensional domain to within $1/2^{3}$th of the domain in each dimension.}
-\label{fig:zorder}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[htbp]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/zorder.png}
+	\caption{Example of 3rd order Morton curve in two dimensions. The bits of the $x$ and $y$ indices are interleaved to generate a single integer that fully describes the cell's location within the two-dimensional domain to within $1/2^{3}$th of the domain in each dimension.}
+	\label{fig:zorder}
+	\end{center}
+	\end{figure}
+\fi
 %
 
 The precision of a single Morton index is only limited by the size of the integer used to store it. For instance, 64-bit Morton indices in 3 dimensions can be localized to $1/2^{21}$th of the domain in each dimension ($3\times21$\,bits = 63\,bits). If the domain is binarily divided into subcells to some order $k$ in each dimension (i.e. $2^{Nk}$ cells), coarser Morton indices can be obtained by simply masking lower bits. Morton ordering has been used to speed up quadtree construction \citep{Hjaltason2002}, nearest neighbor searches \citep{Connor2010}, and range queries \citep{Orenstein1984}. By recording the indices of the cells containing data from each file within a dataset, Morton indices can also be used to construct one-dimensional maps of an $N$-dimensional dataset that can be represented as bitmaps.
@@ -149,13 +193,15 @@ An EWAH compressed bitmap will be smaller when there are long sequences, or ``ru
 \subsection{Collisions}
 It is possible that two files will contain data within the same Morton cell.  This would mean that any time that cell is touched by a selection, both files would need to be loaded even if the selection only touches data from one of the files. Figure \ref{fig:collision} provides an example of collisions between two files. In panel (a) of Figure \ref{fig:collision}, purple cells are those that contain data from both files, a collision, for a 3rd order Morton index. Any selector that contained one of those cells would need to load all of the data from both files, even if it only selected part of the cell.  Where the data is highly-concentrated in a central region (for instance, in a galaxy formation simulation with particles centrally-concentrated) this can mean that some regions suffer from worst-case scenario collision.
 %
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/collisions.png}
-\caption{Examples of a collision between two files. The red points and blue points are contained by two different files. The larger grid in both panels denotes the boundaries of 3rd order Morton cells.  The cells containing points from either file are shaded accordingly such that cells containing points from both files are purple. The smaller grids within these cells on the right are the boundaries of 2nd order Morton cells refining the collisions.}
-\label{fig:collision}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[htbp]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/collisions.png}
+	\caption{Examples of a collision between two files. The red points and blue points are contained by two different files. The larger grid in both panels denotes the boundaries of 3rd order Morton cells.  The cells containing points from either file are shaded accordingly such that cells containing points from both files are purple. The smaller grids within these cells on the right are the boundaries of 2nd order Morton cells refining the collisions.}
+	\label{fig:collision}
+	\end{center}
+	\end{figure}
+\fi
 %
 
 Collisions can be limited by either increasing the order of the index or allowing for multi-resolution indexes \citep{Sinha2006,Sinha2007}. Panel (b) of Figure \ref{fig:collision} demonstrates an example of nesting a second index within cells that contain collisions. In those cells which contained collisions, a 2nd order Morton index was added. Those cells with collisions at the level of the refined index (purple cells in panel (b)) cover a much smaller portion of the domain than the cells with collisions at the level of the coarse index (purple cells in panel (a)). This means that any given selection is less likely to contain a collision and it will be less likely for a selector to require both files to be loaded unless it actually touches data from both files.
@@ -164,13 +210,15 @@ Increasing the order of the coarse index has the same effect as nesting a second
 
 Collisions are more common for file partitioning schemes that are not localized. Figure \ref{fig:collision_files} shows an example of collisions for the different partitioning schemes discussed in \S\ref{SS:decomp}.
 %
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/index.png}
-\caption{Examples of collisions for four different domain partitioning schemes. The heavy black lines denote 1st order Morton cells. The presence of more that one file (color) within a Morton cell indicates a collision.}
-\label{fig:collision_files}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[htbp]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/index.png}
+	\caption{Examples of collisions for four different domain partitioning schemes. The heavy black lines denote 1st order Morton cells. The presence of more that one file (color) within a Morton cell indicates a collision.}
+	\label{fig:collision_files}
+	\end{center}
+	\end{figure}
+\fi
 %
 For the random domain partition in panel (a), every cell within a 1st order Morton index will contain data from all 8 files. This means that any selection using a 1st order bitmap index will require every file to be loaded. For the more localized partitions in panels (c) and (d), only two files touch each Morton cell.
 
@@ -183,13 +231,15 @@ It is often the case that, in selecting a region, additional padding around the 
 
 Depending on how the domain is split between files, the inclusion of ghost zones may or may not increase the number of files that need to be loaded. Figure \ref{fig:ghosts} shows an example of a ghost zone around the first selector from Figure \ref{fig:selectors}. 
 %
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/ghosts.png}
-\caption{Examples of a selector ghost zone with a width of one Morton cell at an index order of 3 for  four different domain partitioning schemes. The shaded circular region is the selector and the shaded box is the ghost zone. Different partitioning schemes will lead to different numbers of ghost files.}
-\label{fig:ghosts}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[htbp]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/ghosts.png}
+	\caption{Examples of a selector ghost zone with a width of one Morton cell at an index order of 3 for  four different domain partitioning schemes. The shaded circular region is the selector and the shaded box is the ghost zone. Different partitioning schemes will lead to different numbers of ghost files.}
+	\label{fig:ghosts}
+	\end{center}
+	\end{figure}
+\fi
 %
 The ghost zone has a width of one Morton cell at an index order of 3 and contains the same part of the domain in each case. However, due to differences in how the domain was partitioned between the files in the four cases, the number of additional ghost files touched by the ghost zone in each case is different. This will also depend on the order of the index to which ghost zones are added. Ghost zones added at the order of the coarse index will be larger than those added at the order of the refined index and will have a higher probability of touching additional files. While including ghost zones is advantageous when neighbor info is needed, it also increases the computational cost of identifying files (see \S\ref{S:tests}). 
 
@@ -229,13 +279,15 @@ The utility of using Morton index bitmaps for mapping files to decrease query ti
 \subsubsection{Overall Refinement}\label{SSS:test_order1}
 The order of the Morton indices used to map the files determines the time required to identify files and the number of collisions that will occur between files. Higher order indices will result in fewer collisions, but will take longer to query, as seen in Figure \ref{fig:test_order1}. Six selectors of varying sizes and positions within the domain where used to identify files based on Morton index bitmaps of varying order. The test dataset was split across the files using a Hilbert curve of order 6 with 10\% scatter between Hilbert cells to simulate an imperfect domain decomposition as can occur if particle positions are updated and output prior to updating the domain decomposition.
 %
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order1_or0.png}
-\caption{Dependence of query time (top), fraction of files selected/cells with collisions (middle), and index size (bottom) on the total refinement of the bitmap index. The solid black lines correspond to the query times and files identified by just the selectors. The dashed blue lines correspond to the query times and additional files selected when a ghost zone with the width of one Morton cell is added around the selectors. The dash-dotted line in the middle panel shows the fraction of cells with collisions between files.}
-\label{fig:test_order1}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[htbp]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order1_or0.png}
+	\caption{Dependence of query time (top), fraction of files selected/cells with collisions (middle), and index size (bottom) on the total refinement of the bitmap index. The solid black lines correspond to the query times and files identified by just the selectors. The dashed blue lines correspond to the query times and additional files selected when a ghost zone with the width of one Morton cell is added around the selectors. The dash-dotted line in the middle panel shows the fraction of cells with collisions between files.}
+	\label{fig:test_order1}
+	\end{center}
+	\end{figure}
+\fi
 %
 
 Below a bitmap index order of 4, there are collisions between multiple files within every cell, resulting in a larger number of files being identified. However, as the order increases, the number of collisions drops and the file count plateaus at $\sim25$\%. This translates to a $\sim75$\% reduction in the memory and time required for processing files, a significant increase in performance. For a 7th order bitmap index, selection requires $>100\times$ the time that the same selection took using a 6th order index, but there is no change in the number of files indicated. A 6th order index is sufficient to identify the minimal set of files touched by the selectors in this case because the dataset was partitioned between the files along a 6th order Hilbert space filling curve. While it is generally true that the time required to identify files using a bitmap index will increase exponentially with the size of the index, the order of the index that results in the minimal number of files for any dataset will depend upon how the domain is partitioned between files (see \S\ref{SS:test_decomp}). The memory required to store the index for the test dataset scales according to $\propto2^{2k}$, for a $k^{\mbox{th}}$ order index. If uncompressed bitmaps had been used instead of EWAH compressed bitmap, the memory would have scaled with the total number of cells contained within the 3-dimensional test domain ($2^{3k}$).
@@ -244,13 +296,15 @@ Below a bitmap index order of 4, there are collisions between multiple files wit
 \subsubsection{Collision Refinement}\label{SSS:test_order2}
 Increasing the refinement of the primary index does so for the entire domain and, as seen in \S\ref{SSS:test_order1}, can become costly in terms of the memory required to store the bitmap and the time required to perform operations. However, it is also possible to increase refinement by nesting a second Morton bitmap index within those cells of the primary index that contain collisions. As the nested indexes will contain a smaller portion of the domain and data, they will be less complex and can be compressed more efficiently than the primary index covering the entire domain. This enhanced compression mean that, although a greater overall number of EWAH compressed bitmaps will need to be utilized (one for the coarse index and one for each collision within the coarse index), less space will be needed to store the bitmap and bitwise operations will be faster. Figure \ref{fig:test_order2} shows the results for adding a secondary index of varying order with the overall refinement order of the index (primary index order + secondary index order) held constant at 6. The test dataset and selectors applied were the same as in \S\ref{SSS:test_order1}.
 %
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order2_to6.png}
-\caption{Dependence of query time (top), fraction of files selected/cells with collisions (middle), and memory required to store the index (bottom) on the order of the secondary index used to refine collisions. In the middle panel, the solid black line corresponds with the fraction of files identified, the dash-dotted blue line is the fraction of cells at the first index level that have collisions, and the dotted red line is the fraction of cells at the second index level that have collisions.}
-\label{fig:test_order2}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[htbp]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_order2_to6.png}
+	\caption{Dependence of query time (top), fraction of files selected/cells with collisions (middle), and memory required to store the index (bottom) on the order of the secondary index used to refine collisions. In the middle panel, the solid black line corresponds with the fraction of files identified, the dash-dotted blue line is the fraction of cells at the first index level that have collisions, and the dotted red line is the fraction of cells at the second index level that have collisions.}
+	\label{fig:test_order2}
+	\end{center}
+	\end{figure}
+\fi
 %
 
 When the order of the second refined index is low, the first index is larger resulting in fewer cells with collisions at the first index and more at the second. The reverse is true when the order of second index is higher. As the overall order is held constant, the same number of files are identified regardless of the orders of the first and second indexes. The time required to identify the files is minimized when cells within the first index become saturated with collisions. For secondary indexes of order 2 or lower, the large increase in performance offered for increases in the index order results from the reduction in the total complexity of the index which translates to shorter times for bitwise operations and less memory required for storage. Above 2nd order, the overhead from storing and accessing more complex EWAH compressed bitmaps for each collision begins to flatten the memory scaling and increase the time required for queries.  However, selections using higher order secondary indices still require less time than in the case where only a single index is used. 
@@ -262,13 +316,15 @@ The optimal value for the orders of the first and second indexes will depend upo
 %
 The time required to identify files touched by a selection will also depend upon the size of the region being selected. Larger selectors will intersect more indices and more files, resulting in more bitmap operations. Figure \ref{fig:test_size} shows the result from varying the selector size. The same test data set from \S\ref{SS:test_order} was used. A bitmap index with a 4th order primary Morton index and 2nd order secondary Morton index was used in all cases. Each cube selector was placed at the center of the domain and scaled along each dimension to some fraction of the total domain.
 %
-\begin{figure}[htbp]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_selector.png}
-\caption{Dependence of query time (top) and number of files selected (bottom) on selector width in terms of the total domain width. The solid black lines correspond to the query times and files identified by the selectors alone. The dashed blue lines correspond the query times and additional files identified when a ghost zone with a width of one cell is added to the selector.}
-\label{fig:test_size}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[htbp]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_selector.png}
+	\caption{Dependence of query time (top) and number of files selected (bottom) on selector width in terms of the total domain width. The solid black lines correspond to the query times and files identified by the selectors alone. The dashed blue lines correspond the query times and additional files identified when a ghost zone with a width of one cell is added to the selector.}
+	\label{fig:test_size}
+	\end{center}
+	\end{figure}
+\fi
 %
 
 As the selector increases in size, it touches a greater number of files, resulting in longer query times. The number of files touched increases in steps due to the way the test dataset was partitioned between files. Using the Hilbert curve, the domain covered by any one file is localized and will have a rectangular shape. This results in an ordered structure that is similar along all dimensions. An increase in the number of files touched indicates that the selector has grown past a file boundary in all directions. It is just prior to these jumps that ghost files are present. If the selector edge is near a file boundary, ghost zones have the potential to overlap the domains contained by neighboring files that are not already touched by the selector. For such a highly ordered dataset, the ghost zones will only identify additional files for selectors that are nearing the edges of file boundaries. However, queries including ghost zones require slightly more time even when this is not the case.
@@ -278,13 +334,16 @@ As the selector increases in size, it touches a greater number of files, resulti
 %
 As discussed in \S\ref{SS:decomp}, a bitmap index is more effective in cases where the domain is partitioned between files in a localized way. If files contain non-contiguous parts of the domain, contiguous selections will require more files to be loaded. Figure \ref{fig:test_decomp} shows results for four different partitioning schemes. All four data sets cover the same three-dimensional domain with $1024^3$ points split across 512 files. The Hilbert dataset is the same one used in previous tests (see \S\ref{SS:test_order} for a description). The Morton dataset is constructed in a similar way to the Hilbert dataset with file partitions occurring along a 6th order Morton curve and including a 10\% scatter of points between Morton cells. The sliced dataset is partitioned in slices along one dimension with 10\% scatter of points between adjacent slices. Files in the random dataset contain a random sample of points, uniformly distributed across the domain.
 %
-\begin{figure}[hbpt]
-\begin{center}
-\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_decomp_to0.png}
-\caption{Dependence of query time (top), the number of files selected (middle), and the size of the index (bottom) on index order for different domain partitioning between files. The dotted magenta lines are for a randomly partitioned dataset, the cyan dashed-dotted lines are a dataset partitioned by equal slices alone one dimension, the dashed red lines are a dataset partitioned along an 6th order Morton curve, and the solid blue lines are a dataset partitioned along a 6th order Hilbert curve.}
-\label{fig:test_decomp}
-\end{center}
-\end{figure}
+\ifinclfig
+	\begin{figure}[hbpt]
+	\begin{center}
+	\includegraphics[width=\columnwidth,keepaspectratio]{../images/vary_decomp_to0.png}
+	\caption{Dependence of query time (top), the number of files selected (middle), and the size of the index (bottom) on index order for different domain partitioning between files. The dotted magenta lines are for a randomly partitioned dataset, the cyan dashed-dotted lines are a dataset partitioned by equal slices alone one dimension, the dashed red lines are a dataset partitioned along an 6th order Morton curve, and the solid blue lines are a dataset partitioned along a 6th order Hilbert curve.}
+	\label{fig:test_decomp}
+	\end{center}
+	\end{figure}
+\fi
+%
 
 Many more files are identified for the random dataset than those datasets with localized partitioning of the domain. Above an order of 3, very few files could be excluded for the random dataset. This was not true for the localized partitioning schemes. At the highest order, only $\sim20-30$\% of the files within these datasets would need to be loaded in order to get all of the data within the selected regions, while $\sim80$\% of the files in the random dataset would be required. The smallest fraction of files were identified for the Hilbert and Morton datasets, with a slightly greater fraction being identified for the sliced dataset. For a 6th order index and below, queries on the Morton and Hilbert partitioned datasets are the fastest. An index order of 7 provides refinement beyond the 6th order curves used to partition the dataset between the files and the required for queries on these datasets increases dramatically. The sliced dataset performed particularly well in this case because the selectors used were cubes and did not preferentially select along any one dimension. 
 
@@ -303,14 +362,15 @@ Currently, this technique is most useful for datasets split across multiple file
 
 %---------------------------------------------------------------------------------
 % CODE
-\section{Code}\label{S:code}
+\section*{Code}\label{S:code}
 These procedures have been implemented as part of the {\tt yt} python package
 \citep{Turk20d11a} in order to facilitate the analysis of large astrophysical
 N-body simulations; currently undergoing review for inclusion in a future version of {\tt yt} (3.4 or later), our implementation is available at \url{https://bitbucket.org/langmm/yt-bitmap}. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016} and exposed to Python using Cython \citep{Behnel2011}. 
 
 %---------------------------------------------------------------------------------
 % ACKNOWLEDGMENTS
-\acknowledgments
+\section*{Acknowledgment}
+%\acknowledgments
 This publication is supported in part by the Gordon and Betty Moore
 Foundation’s Data-Driven Discovery Initiative through Grant GBMF4561 to Matthew
 Turk.  This material is based upon work supported by the National Science
