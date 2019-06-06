@@ -4,11 +4,11 @@
 \newif\ifinclfig
 \newif\ifieee
 
-% For IEEE word count (no figs)
+% For IEEE 
 \ieeetrue
-\twocolfalse
+\twocoltrue
 \placefigtrue
-\inclfigtrue
+\inclfigtrue % false for word count (no figs)
 \draftfalse
 
 % For Draft
@@ -35,10 +35,14 @@
 %---------------------------------------------------------------------------------
 % PREAMBLE
 \iftwocol
-	\documentclass[apjl]{emulateapj}
-\else
 	\ifieee
 		\documentclass[journal]{IEEEtran}
+	\else
+		\documentclass[apjl]{emulateapj}
+	\fi
+\else
+	\ifieee
+		\documentclass[peerreview]{IEEEtran}
 	\else
 		\documentclass[preprint]{aastex}
 	\fi
@@ -66,7 +70,7 @@
 	\fi
 \fi
 
-\usepackage{hyperref}
+\usepackage[bookmarks=false]{hyperref}
 
 %\makeatletter
 
@@ -96,8 +100,8 @@ Foundation under Grant No.~ACI-1535651. }%
 
 %\altaffiltext{2}{National Center for Supercomputing Application, University of Illinois, Urbana-Champaign, IL email:{\tt mjturk@illinois.edu}}
 
-\markboth{Journal of Computing in Science and Engineering,~Vol.~X, No.~X, Month~Year}%
-{Bitmap Indexing for Fast Analysis of Large Astrophysical Datasets}
+%\markboth{Journal of Computing in Science and Engineering,~Vol.~X, No.~X, Month~Year}%
+%{Bitmap Indexing for Fast Analysis of Large Astrophysical Datasets}
 
 \maketitle
 
@@ -372,7 +376,7 @@ Currently, this technique is most useful for datasets split across multiple file
 \section*{Code}\label{S:code}
 These procedures have been implemented as part of the {\tt yt} python package
 \citep{Turk20d11a} in order to facilitate the analysis of large astrophysical
-N-body simulations; currently undergoing review for inclusion in a future version of {\tt yt} (3.4 or later), our implementation is available at \url{https://bitbucket.org/langmm/yt-bitmap}. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016} and exposed to Python using Cython \citep{Behnel2011}. 
+N-body simulations; currently undergoing review for inclusion in a future version of {\tt yt} (3.4 or later), our implementation is available at {https://bitbucket.org/langmm/yt-bitmap}. The open source EWAHBoolArray C++ package is used for implementing EWAH bitmaps \citep{Lemire2010,Kaser2016} and exposed to Python using Cython \citep{Behnel2011}. 
 
 %---------------------------------------------------------------------------------
 % ACKNOWLEDGMENTS
